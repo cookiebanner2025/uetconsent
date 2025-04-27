@@ -1,9 +1,12 @@
 /**
  * Ultimate GDPR Cookie Consent Solution v4.5 - Advanced Edition
- * - Added full support for Google Consent Mode v2
- * - Added Microsoft UET consent mode integration
- * - Fixed parameter naming (asc, src, evt) as per documentation
- * - Maintained all existing functionality
+ * - Google Consent Mode v2 compliant
+ * - Microsoft UET consent mode support
+ * - Fully organized configuration with separate styling controls
+ * - Complete admin dashboard with password protection
+ * - Enhanced analytics tracking
+ * - Multi-language support
+ * - Mobile-friendly cookie details display
  */
 
 // ============== CONFIGURATION SECTION ============== //
@@ -41,45 +44,12 @@ const config = {
             enterEffect: 'fadeIn',
             exitEffect: 'fadeOut'
         },
-        
-        // New timeline configuration for banner visibility
-        bannerSchedule: {
-            enabled: false, // Set to true to enable scheduling
-            startDate: '2023-01-01', // Start date (YYYY-MM-DD)
-            endDate: '2023-12-31',   // End date (YYYY-MM-DD)
-            startTime: '00:00',      // Start time (24-hour format)
-            endTime: '23:59',        // End time (24-hour format)
-            daysOfWeek: [1,2,3,4,5], // 0=Sunday, 1=Monday, etc.
-            durationDays: 365,       // Alternative: show banner for X days from first visit
-            durationMinutes: 2       // Alternative: show banner for X minutes per session
-        }
-    },
-    
-    // Consent Mode Configuration
-    consentMode: {
-        google: {
-            enabled: true,
-            defaultState: {
-                ad_storage: 'denied',
-                analytics_storage: 'denied',
-                ad_user_data: 'denied',
-                ad_personalization: 'denied',
-                personalization_storage: 'denied',
-                functionality_storage: 'denied',
-                security_storage: 'granted'
-            }
-        },
-        microsoft: {
-            enabled: true,
-            tagId: '355038208', // Your UET tag ID
-            defaultState: 'D' // D = Denied, G = Granted
-        }
     },
     
     // Language configuration
     languageConfig: {
         defaultLanguage: 'en',
-        availableLanguages: [], // Only en and fr will be used as requested
+        availableLanguages: ['en', 'fr'], // Only en and fr as requested
         showLanguageSelector: true,
         autoDetectLanguage: true
     },
@@ -311,117 +281,43 @@ const config = {
 window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 
+// Initialize Microsoft UET
+window.uetq = window.uetq || [];
+window.uetq.push('setConsentGiven', false); // Default to no consent
+
 // Set default consent (deny all except security)
-if (config.consentMode.google.enabled) {
-    gtag('consent', 'default', config.consentMode.google.defaultState);
-}
-
-// Initialize Microsoft UET consent mode
-function initMicrosoftUETConsent(state) {
-    if (!config.consentMode.microsoft.enabled) return;
-    
-    const uetConfig = {
-        ti: config.consentMode.microsoft.tagId,
-        tm: 'gtm002',
-        Ver: '2',
-        asc: state || config.consentMode.microsoft.defaultState,
-        src: 'default',
-        evt: 'consent',
-        bo: '1'
-    };
-    
-    // Push initial consent state
-    window.uetq = window.uetq || [];
-    window.uetq.push('setConsent', uetConfig);
-    
-    // Log the initial UET consent push
-    console.log('Microsoft UET consent initialized with:', uetConfig);
-}
-
-// Initialize Microsoft UET with default consent
-initMicrosoftUETConsent();
+gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'analytics_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'personalization_storage': 'denied',
+    'functionality_storage': 'denied',
+    'security_storage': 'granted'
+});
 
 // Enhanced cookie database with detailed descriptions
 const cookieDatabase = {
-    // Existing cookies
+    // Google cookies
     '_gcl': { category: 'advertising', duration: '90 days', description: 'Google Click Identifier - Tracks ad clicks and conversions' },
     '_gcl_au': { category: 'advertising', duration: '90 days', description: 'Google Ads conversion tracking' },
     'gclid': { category: 'advertising', duration: '30 days', description: 'Google Click ID - Tracks PPC ad clicks' },
     'IDE': { category: 'advertising', duration: '390 days', description: 'Google DoubleClick - Used for retargeting' },
     'NID': { category: 'advertising', duration: '180 days', description: 'Google Ads preferences' },
     '_gat_gtag': { category: 'advertising', duration: '1 minute', description: 'Google Tag Manager throttle' },
+    '_ga': { category: 'analytics', duration: '730 days', description: 'Google Analytics' },
+    '_gid': { category: 'analytics', duration: '1 day', description: 'Google Analytics' },
+    '_gat': { category: 'analytics', duration: '1 minute', description: 'Google Analytics throttle' },
+    
+    // Microsoft UET cookies
     'msclkid': { category: 'advertising', duration: '30 days', description: 'Microsoft Click ID - Tracks ad clicks' },
     'MUID': { category: 'advertising', duration: '390 days', description: 'Microsoft Universal ID' },
     '_uetsid': { category: 'advertising', duration: '1 day', description: 'Bing Ads session ID' },
     '_uetvid': { category: 'advertising', duration: '390 days', description: 'Bing Ads visitor ID' },
-    '_fbp': { category: 'advertising', duration: '90 days', description: 'Facebook Pixel - Conversion tracking' },
-    'fr': { category: 'advertising', duration: '90 days', description: 'Facebook browser ID' },
-    'datr': { category: 'advertising', duration: '730 days', description: 'Facebook browser identification' },
-    '_ttp': { category: 'advertising', duration: '390 days', description: 'TikTok Pixel tracking' },
-    'ttclid': { category: 'advertising', duration: '30 days', description: 'TikTok Click ID' },
-    'tt_sessionid': { category: 'advertising', duration: '1 day', description: 'TikTok session' },
-    'lidc': { category: 'advertising', duration: '1 day', description: 'LinkedIn Ads routing' },
-    'bcookie': { category: 'advertising', duration: '730 days', description: 'LinkedIn Browser ID' },
-    'li_sugr': { category: 'advertising', duration: '90 days', description: 'LinkedIn user tracking' },
-    '_pinterest_ct_ua': { category: 'advertising', duration: '365 days', description: 'Pinterest Click Tracking' },
-    '_pinterest_sess': { category: 'advertising', duration: '1 day', description: 'Pinterest session' },
-    'cm_sub': { category: 'advertising', duration: '365 days', description: 'Pinterest conversion' },
-    'obuid': { category: 'advertising', duration: '365 days', description: 'Outbrain user ID' },
-    'obcl': { category: 'advertising', duration: '30 days', description: 'Outbrain click tracking' },
-    'personalization_id': { category: 'advertising', duration: '730 days', description: 'Twitter personalization' },
-    'guest_id': { category: 'advertising', duration: '730 days', description: 'Twitter guest tracking' },
-    'sc_at': { category: 'advertising', duration: '365 days', description: 'Snapchat Ads tracking' },
-    '_scid': { category: 'advertising', duration: '365 days', description: 'Snapchat user ID' },
-    'rdt_uuid': { category: 'advertising', duration: '365 days', description: 'Reddit unique user ID' },
-    'session_tracker': { category: 'advertising', duration: '1 day', description: 'Reddit session' },
-    'criteo': { category: 'advertising', duration: '365 days', description: 'Criteo retargeting' },
-    'uid': { category: 'advertising', duration: '365 days', description: 'Criteo user ID' },
-    '__adroll': { category: 'advertising', duration: '365 days', description: 'AdRoll tracking' },
-    '__ar_v4': { category: 'advertising', duration: '365 days', description: 'AdRoll segmentation' },
-    'ad-id': { category: 'advertising', duration: '270 days', description: 'Amazon Ad System ID' },
-    'ad-privacy': { category: 'advertising', duration: '730 days', description: 'Amazon Ad Preferences' },
-    'yandexuid': { category: 'advertising', duration: '365 days', description: 'Yandex Metrica user ID' },
-    'ymex': { category: 'advertising', duration: '365 days', description: 'Yandex Metrica visitor' },
-    'm-b': { category: 'advertising', duration: '365 days', description: 'Quora browser ID' },
-    'm-uid': { category: 'advertising', duration: '365 days', description: 'Quora user ID' },
-    'sadb': { category: 'advertising', duration: '30 days', description: 'StackAdapt bidding data' },
-    'sadr': { category: 'advertising', duration: '30 days', description: 'StackAdapt retargeting' },
-    'TDID': { category: 'advertising', duration: '365 days', description: 'The Trade Desk ID' },
-    'TDCPM': { category: 'advertising', duration: '365 days', description: 'The Trade Desk CPM data' },
-    'mmapi': { category: 'advertising', duration: '30 days', description: 'MediaMath API tracking' },
-    'mmdata': { category: 'advertising', duration: '30 days', description: 'MediaMath campaign data' },
-    '_ga': { category: 'analytics', duration: '730 days', description: 'Google Analytics' },
-    '_gid': { category: 'analytics', duration: '1 day', description: 'Google Analytics' },
-    '_gat': { category: 'analytics', duration: '1 minute', description: 'Google Analytics throttle' },
-    'PHPSESSID': { category: 'functional', duration: 'Session', description: 'PHP session' },
-    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' },
-
-    // New Facebook cookies from your list
-    'lu': { category: 'advertising', duration: '2 years', description: 'Used to record whether the person chose to remain logged in (User ID and miscellaneous log in information)' },
-    'xs': { category: 'advertising', duration: '90 days', description: 'Used with c_user cookie to authenticate identity to Facebook (Session ID, creation time, authentication value)' },
-    'c_user': { category: 'advertising', duration: '90 days', description: 'Used with xs cookie to authenticate identity to Facebook (User ID)' },
-    'm_user': { category: 'advertising', duration: '90 days', description: 'Used to authenticate identity on Facebook mobile website (Email, User ID, authentication value)' },
-    'pl': { category: 'advertising', duration: '90 days', description: 'Records that a device or browser logged in via Facebook platform' },
-    'dbln': { category: 'advertising', duration: '2 years', description: 'Used to enable device-based logins (Login authentication values)' },
-    'aks': { category: 'advertising', duration: '30 days', description: 'Determines login state of a person visiting accountkit.com (Account kit access token)' },
-    'aksb': { category: 'advertising', duration: '30 minutes', description: 'Authenticates logins using Account Kit (Request time value)' },
-    'sfau': { category: 'advertising', duration: '1 day', description: 'Optimizes recovery flow after failed login attempts (Encrypted user ID, contact point, time stamp)' },
-    'ick': { category: 'advertising', duration: '2 years', description: 'Stores an encryption key used to encrypt cookies' },
-    'csm': { category: 'advertising', duration: '90 days', description: 'Insecure indicator' },
-    's': { category: 'advertising', duration: '90 days', description: 'Facebook browser identification, authentication, marketing cookies' },
-    'sb': { category: 'advertising', duration: '2 years', description: 'Facebook browser identification, authentication, marketing cookies' },
-    '_fbc': { category: 'advertising', duration: '2 years', description: 'Used for Facebook advertising products like real time bidding' },
-    'oo': { category: 'advertising', duration: '5 years', description: 'Ad opt-out cookie' },
-    'ddid': { category: 'advertising', duration: '28 days', description: 'Used to open specific location in advertiser app upon installation' },
-    'locale': { category: 'advertising', duration: '7 days', description: 'Contains display locale of last logged in user' },
-    'js_ver': { category: 'advertising', duration: '7 days', description: 'Records age of Facebook javascript files' },
-    'rc': { category: 'advertising', duration: '7 days', description: 'Used to optimize site performance for advertisers' },
-    'campaign_click_url': { category: 'advertising', duration: '30 days', description: 'Records Facebook URL landed on after clicking an ad' },
-    'usida': { category: 'advertising', duration: 'Session', description: 'Collects browser and unique identifier for targeted advertising' },
     
-    // Facebook functional cookies
-    'wd': { category: 'functional', duration: 'Session', description: 'Stores browser window dimensions for page rendering optimization' },
-    'presence': { category: 'functional', duration: 'Session', description: 'Contains user chat state' }
+    // Other common cookies
+    'PHPSESSID': { category: 'functional', duration: 'Session', description: 'PHP session' },
+    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' }
 };
 
 // Language translations (keeping only en and fr as requested)
@@ -451,9 +347,6 @@ const translations = {
         statsCustom: "Customized",
         statsTotal: "Total",
         statsPercentage: "Percentage",
-        statsLast1Day: "Last 1 Day",
-        statsLast7Days: "Last 7 Days",
-        statsLast30Days: "Last 30 Days",
         passwordPrompt: "Enter password to view analytics",
         passwordSubmit: "Submit",
         passwordIncorrect: "Incorrect password",
@@ -485,9 +378,6 @@ const translations = {
         statsCustom: "Personnalisé",
         statsTotal: "Total",
         statsPercentage: "Pourcentage",
-        statsLast1Day: "Dernier Jour",
-        statsLast7Days: "7 Derniers Jours",
-        statsLast30Days: "30 Derniers Jours",
         passwordPrompt: "Entrez le mot de passe pour voir les analyses",
         passwordSubmit: "Soumettre",
         passwordIncorrect: "Mot de passe incorrect",
@@ -508,10 +398,6 @@ let consentAnalytics = {
 
 // Password protection for analytics
 let isDashboardAuthenticated = false;
-
-// Banner scheduling variables
-let bannerTimer = null;
-let bannerShown = false;
 
 // Load analytics data from localStorage
 function loadAnalyticsData() {
@@ -562,7 +448,7 @@ function updateConsentStats(status) {
     saveAnalyticsData();
 }
 
-// Generate analytics dashboard HTML with 1 day, 7 days, and 30 days sections
+// Generate analytics dashboard HTML
 function generateAnalyticsDashboard(language = 'en') {
     const lang = translations[language] || translations.en;
     
@@ -575,23 +461,11 @@ function generateAnalyticsDashboard(language = 'en') {
     const rejectedPercent = total > 0 ? Math.round((consentAnalytics.total.rejected / total) * 100) : 0;
     const customPercent = total > 0 ? Math.round((consentAnalytics.total.custom / total) * 100) : 0;
     
-    // Get last 1 day data
-    const today = new Date().toISOString().split('T')[0];
-    const last1Day = {};
-    last1Day[today] = consentAnalytics.daily[today] || { accepted: 0, rejected: 0, custom: 0 };
-    
     // Get last 7 days data
     const last7Days = {};
     const dates = Object.keys(consentAnalytics.daily).sort().reverse().slice(0, 7);
     dates.forEach(date => {
         last7Days[date] = consentAnalytics.daily[date];
-    });
-    
-    // Get last 30 days data
-    const last30Days = {};
-    const monthlyDates = Object.keys(consentAnalytics.daily).sort().reverse().slice(0, 30);
-    monthlyDates.forEach(date => {
-        last30Days[date] = consentAnalytics.daily[date];
     });
     
     return `
@@ -624,86 +498,30 @@ function generateAnalyticsDashboard(language = 'en') {
             </div>
         </div>
         
-        <div class="time-based-stats">
-            <div class="time-stat">
-                <h4>${lang.statsLast1Day}</h4>
-                <div class="stat-bars">
-                    ${Object.entries(last1Day).map(([date, data]) => {
-                        const dayTotal = data.accepted + data.rejected + data.custom;
-                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
-                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
-                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
-                        
-                        return `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${date}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${data.accepted} ${lang.statsAccepted}</span>
-                                <span>${data.custom} ${lang.statsCustom}</span>
-                                <span>${data.rejected} ${lang.statsRejected}</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-            
-            <div class="time-stat">
-                <h4>${lang.statsLast7Days}</h4>
-                <div class="stat-bars">
-                    ${Object.entries(last7Days).map(([date, data]) => {
-                        const dayTotal = data.accepted + data.rejected + data.custom;
-                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
-                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
-                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
-                        
-                        return `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${date}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${data.accepted} ${lang.statsAccepted}</span>
-                                <span>${data.custom} ${lang.statsCustom}</span>
-                                <span>${data.rejected} ${lang.statsRejected}</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-            
-            <div class="time-stat">
-                <h4>${lang.statsLast30Days}</h4>
-                <div class="stat-bars">
-                    ${Object.entries(last30Days).map(([date, data]) => {
-                        const dayTotal = data.accepted + data.rejected + data.custom;
-                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
-                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
-                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
-                        
-                        return `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${date}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${data.accepted} ${lang.statsAccepted}</span>
-                                <span>${data.custom} ${lang.statsCustom}</span>
-                                <span>${data.rejected} ${lang.statsRejected}</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
+        <div class="time-stat">
+            <h4>Last 7 Days</h4>
+            <div class="stat-bars">
+                ${Object.entries(last7Days).map(([date, data]) => {
+                    const dayTotal = data.accepted + data.rejected + data.custom;
+                    const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
+                    const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
+                    const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
+                    
+                    return `
+                    <div class="stat-bar-container">
+                        <div class="stat-bar-label">${date}</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
+                            <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
+                            <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
+                        </div>
+                        <div class="stat-bar-legend">
+                            <span>${data.accepted} ${lang.statsAccepted}</span>
+                            <span>${data.custom} ${lang.statsCustom}</span>
+                            <span>${data.rejected} ${lang.statsRejected}</span>
+                        </div>
+                    </div>`;
+                }).join('')}
             </div>
         </div>
     </div>`;
@@ -780,20 +598,6 @@ function detectUserLanguage(geoData) {
         if (preferredLanguage && translations[preferredLanguage]) {
             return preferredLanguage;
         }
-    }
-    
-    // Then try to get language from country if auto-detection is enabled
-    if (config.languageConfig.autoDetectLanguage && geoData && geoData.country) {
-        const countryLang = countryLanguageMap[geoData.country];
-        if (countryLang && translations[countryLang]) {
-            return countryLang;
-        }
-    }
-    
-    // Fallback to browser language
-    const browserLang = (navigator.language || 'en').split('-')[0];
-    if (translations[browserLang]) {
-        return browserLang;
     }
     
     // Final fallback to configured default language
@@ -1799,12 +1603,6 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         color: ${config.bannerStyle.description.color};
     }
 
-    .time-based-stats {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 30px;
-    }
-
     .time-stat {
         background-color: ${config.dashboardStyle.statCards.background};
         border-radius: ${config.dashboardStyle.statCards.borderRadius};
@@ -1930,14 +1728,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    @media (min-width: 768px) {
-        .cookie-consent-buttons {
-            flex-direction: row;
-        }
-        .cookie-btn {
-            flex: 1;
-        }
-    }
+
     @media (max-width: 768px) {
         .cookie-consent-banner {
             width: 90%;
@@ -2074,80 +1865,11 @@ function injectConsentHTML(detectedCookies, language = 'en') {
     document.body.insertAdjacentHTML('beforeend', html);
 }
 
-// Check if banner should be shown based on schedule
-function shouldShowBanner() {
-    if (!config.behavior.bannerSchedule.enabled) {
-        return true;
-    }
-
-    const now = new Date();
-    const currentDate = now.toISOString().split('T')[0];
-    const currentTime = now.getHours() * 100 + now.getMinutes();
-    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-    // Check if we're using duration-based settings
-    if (config.behavior.bannerSchedule.durationDays) {
-        const firstVisit = getCookie('first_visit_date');
-        if (!firstVisit) {
-            setCookie('first_visit_date', currentDate, config.behavior.bannerSchedule.durationDays);
-            return true;
-        }
-        
-        const firstVisitDate = new Date(firstVisit);
-        const endDate = new Date(firstVisitDate);
-        endDate.setDate(endDate.getDate() + config.behavior.bannerSchedule.durationDays);
-        
-        return now <= endDate;
-    }
-
-    if (config.behavior.bannerSchedule.durationMinutes) {
-        const sessionStart = getCookie('session_start_time');
-        if (!sessionStart) {
-            setCookie('session_start_time', now.getTime().toString(), 0.5); // Expires in 30 minutes
-            return true;
-        }
-        
-        const sessionStartTime = parseInt(sessionStart);
-        const endTime = sessionStartTime + (config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
-        
-        return now.getTime() <= endTime;
-    }
-
-    // Check date range
-    const startDate = new Date(config.behavior.bannerSchedule.startDate);
-    const endDate = new Date(config.behavior.bannerSchedule.endDate);
-    
-    if (now < startDate || now > endDate) {
-        return false;
-    }
-
-    // Check time range
-    const startTime = parseInt(config.behavior.bannerSchedule.startTime.split(':')[0]) * 100 + 
-                      parseInt(config.behavior.bannerSchedule.startTime.split(':')[1]);
-    const endTime = parseInt(config.behavior.bannerSchedule.endTime.split(':')[0]) * 100 + 
-                    parseInt(config.behavior.bannerSchedule.endTime.split(':')[1]);
-
-    if (currentTime < startTime || currentTime > endTime) {
-        return false;
-    }
-
-    // Check days of week
-    if (config.behavior.bannerSchedule.daysOfWeek.length > 0 && 
-        !config.behavior.bannerSchedule.daysOfWeek.includes(currentDay)) {
-        return false;
-    }
-
-    return true;
-}
-
 // Main initialization function
 function initializeCookieConsent(detectedCookies, language) {
     const consentGiven = getCookie('cookie_consent');
     
-    // Check if banner should be shown based on schedule
-    const bannerShouldBeShown = shouldShowBanner();
-    
-    if (!consentGiven && config.behavior.autoShow && bannerShouldBeShown) {
+    if (!consentGiven && config.behavior.autoShow) {
         setTimeout(() => {
             showCookieBanner();
         }, config.behavior.bannerDelay * 1000);
@@ -2231,20 +1953,6 @@ function initializeCookieConsent(detectedCookies, language) {
             e.preventDefault();
             showAnalyticsDashboard();
         });
-    }
-    
-    // Setup timer for durationMinutes if enabled
-    if (config.behavior.bannerSchedule.enabled && config.behavior.bannerSchedule.durationMinutes) {
-        // Clear any existing timer
-        if (bannerTimer) {
-            clearTimeout(bannerTimer);
-        }
-        
-        bannerTimer = setTimeout(() => {
-            if (!getCookie('cookie_consent')) {
-                hideCookieBanner();
-            }
-        }, config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
     }
 }
 
@@ -2347,7 +2055,6 @@ function showCookieBanner() {
     setTimeout(() => {
         banner.classList.add('show');
     }, 10);
-    bannerShown = true;
 }
 
 function hideCookieBanner() {
@@ -2356,7 +2063,6 @@ function hideCookieBanner() {
     setTimeout(() => {
         banner.style.display = 'none';
     }, 400);
-    bannerShown = false;
 }
 
 function showCookieSettings() {
@@ -2509,94 +2215,6 @@ function saveCustomSettings() {
     }
 }
 
-// Update consent mode for both Google and Microsoft
-function updateConsentMode(consentData) {
-    const consentStates = {
-        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
-        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
-        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
-        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
-        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
-        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
-        'security_storage': 'granted'
-    };
-
-    // Determine GCS signal based on consent status and categories
-    let gcsSignal = 'G100'; // Default to all denied
-    
-    if (consentData.status === 'accepted') {
-        gcsSignal = 'G111'; // All granted
-    } else if (consentData.status === 'custom') {
-        if (consentData.categories.analytics && !consentData.categories.advertising) {
-            gcsSignal = 'G101'; // Analytics granted, ads denied
-        } else if (consentData.categories.advertising && !consentData.categories.analytics) {
-            gcsSignal = 'G110'; // Ads granted, analytics denied
-        } else if (consentData.categories.analytics && consentData.categories.advertising) {
-            gcsSignal = 'G111'; // Both granted (same as accept all)
-        } else {
-            gcsSignal = ''; // Both denied (same as reject all)
-        }
-    }
-
-    // Update Google Consent Mode
-    if (config.consentMode.google.enabled) {
-        gtag('consent', 'update', consentStates);
-    }
-
-    // Update Microsoft UET Consent Mode
-    if (config.consentMode.microsoft.enabled) {
-        const uetConfig = {
-            ti: config.consentMode.microsoft.tagId,
-            tm: 'gtm002',
-            Ver: '2',
-            asc: consentData.categories.advertising ? 'G' : 'D',
-            src: consentData.status === 'accepted' ? 'default' : 'update',
-            evt: 'consent',
-            bo: consentData.status === 'accepted' ? '1' : '3'
-        };
-
-        // Push the updated consent to Microsoft UET
-        window.uetq = window.uetq || [];
-        window.uetq.push('setConsent', uetConfig);
-        
-        console.log('Microsoft UET consent updated with:', uetConfig);
-    }
-
-    // Push event to dataLayer for tracking
-    window.dataLayer.push({
-        'event': 'cookie_consent_update',
-        'consent_mode': consentStates,
-        'gcs': gcsSignal,
-        'consent_status': consentData.status,
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
-
-    // Send pageLoad event if this is the initial consent
-    if (consentData.status === 'accepted' || consentData.status === 'rejected') {
-        sendPageLoadEvent(consentData);
-    }
-}
-
-// Send pageLoad event to Microsoft UET
-function sendPageLoadEvent(consentData) {
-    if (!config.consentMode.microsoft.enabled) return;
-    
-    const uetConfig = {
-        ti: config.consentMode.microsoft.tagId,
-        tm: 'gtm002',
-        Ver: '2',
-        asc: consentData.categories.advertising ? 'G' : 'D',
-        evt: 'pageLoad',
-        sv: '1'
-    };
-
-    window.uetq = window.uetq || [];
-    window.uetq.push('setConsent', uetConfig);
-    
-    console.log('Microsoft UET pageLoad event sent:', uetConfig);
-}
-
 // Helper functions
 function clearNonEssentialCookies() {
     const cookies = document.cookie.split(';');
@@ -2636,6 +2254,99 @@ function loadCookiesAccordingToConsent(consentData) {
     
     if (consentData.categories.performance) {
         loadPerformanceCookies();
+    }
+}
+
+function updateConsentMode(consentData) {
+    const consentStates = {
+        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
+        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
+        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
+        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
+        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
+        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
+        'security_storage': 'granted'
+    };
+
+    // Update Google Consent Mode
+    gtag('consent', 'update', consentStates);
+    
+    // Update Microsoft UET consent
+    window.uetq = window.uetq || [];
+    window.uetq.push('setConsentGiven', consentData.categories.advertising);
+    
+    // Push event to dataLayer
+    window.dataLayer.push({
+        'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': consentData.gcs,
+        'consent_status': consentData.status,
+        'consent_categories': consentData.categories,
+        'timestamp': new Date().toISOString()
+    });
+    
+    // Send initial consent signals
+    sendInitialConsentSignals(consentData);
+}
+
+// Send initial consent signals for both Google and Microsoft
+function sendInitialConsentSignals(consentData) {
+    // Google Consent Mode default signals are already set
+    
+    // Microsoft UET initial signal
+    if (window.uetq) {
+        window.uetq.push('setConsentGiven', consentData.categories.advertising);
+    }
+    
+    // Additional signals based on consent status
+    if (consentData.status === 'accepted') {
+        // Google signal
+        window.dataLayer.push({
+            'event': 'consent',
+            'src': 'update',
+            'asc': 'G',
+            'cdb': 'AQIT'
+        });
+        
+        // Microsoft signal
+        window.dataLayer.push({
+            'event': 'consent',
+            'src': 'update',
+            'asc': 'G'
+        });
+    } else if (consentData.status === 'rejected') {
+        // Google signal
+        window.dataLayer.push({
+            'event': 'consent',
+            'src': 'update',
+            'asc': 'D',
+            'cdb': 'AQIR'
+        });
+        
+        // Microsoft signal
+        window.dataLayer.push({
+            'event': 'consent',
+            'src': 'update',
+            'asc': 'D'
+        });
+    } else {
+        // Custom consent
+        const asc = consentData.categories.advertising ? 'G' : 'D';
+        
+        // Google signal
+        window.dataLayer.push({
+            'event': 'consent',
+            'src': 'update',
+            'asc': asc,
+            'cdb': asc === 'G' ? 'AQIT' : 'AQIR'
+        });
+        
+        // Microsoft signal
+        window.dataLayer.push({
+            'event': 'consent',
+            'src': 'update',
+            'asc': asc
+        });
     }
 }
 
@@ -2726,6 +2437,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Detect language
     const detectedLanguage = detectUserLanguage(geoData);
     
+    // Send initial consent signals (default denied)
+    window.dataLayer.push({
+        'event': 'consent',
+        'src': 'default',
+        'asc': 'D',
+        'cdb': 'AQIR'
+    });
+    
     const detectedCookies = scanAndCategorizeCookies();
     if (detectedCookies.uncategorized.length > 0) {
         console.log('Uncategorized cookies found:', detectedCookies.uncategorized);
@@ -2745,11 +2464,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCookieTables(newCookies);
         }
     }, 10000);
-    
-    // Handle scroll-based acceptance
-    if (config.behavior.acceptOnScroll) {
-        window.addEventListener('scroll', handleScrollAcceptance);
-    }
 });
 
 // Handle scroll-based acceptance
