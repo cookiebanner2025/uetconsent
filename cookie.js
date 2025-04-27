@@ -1,10 +1,12 @@
 /**
  * Ultimate GDPR Cookie Consent Solution v4.5 - Advanced Edition
- * - Full Google Consent Mode v2 support
- * - Microsoft UET consent integration
- * - Multi-platform compatibility
+ * - Full support for Google Consent Mode v2
+ * - Full support for Microsoft UET Consent Mode
+ * - Organized configuration with separate styling controls
+ * - Complete admin dashboard with password protection
  * - Enhanced analytics tracking
- * - Complete admin dashboard
+ * - Multi-language support
+ * - Mobile-friendly cookie details display
  */
 
 // ============== CONFIGURATION SECTION ============== //
@@ -41,41 +43,6 @@ const config = {
             easing: 'ease-in-out',
             enterEffect: 'fadeIn',
             exitEffect: 'fadeOut'
-        },
-        
-        // New timeline configuration for banner visibility
-        bannerSchedule: {
-            enabled: false,
-            startDate: '2023-01-01',
-            endDate: '2023-12-31',
-            startTime: '00:00',
-            endTime: '23:59',
-            daysOfWeek: [1,2,3,4,5],
-            durationDays: 365,
-            durationMinutes: 2
-        }
-    },
-    
-    // Platform configurations
-    platforms: {
-        google: {
-            enabled: true,
-            consentMode: 'advanced', // 'basic' or 'advanced'
-            gtagConfig: {
-                // Add your Google Tag Manager or GA4 configuration here
-            }
-        },
-        microsoft: {
-            enabled: true,
-            uetConfig: {
-                // Add your Microsoft UET configuration here
-            }
-        },
-        facebook: {
-            enabled: true
-        },
-        otherPlatforms: {
-            enabled: true
         }
     },
     
@@ -108,6 +75,27 @@ const config = {
         trackPageViews: true,
         trackEvents: true,
         trackConsentChanges: true
+    },
+    
+    // Microsoft UET Configuration
+    microsoftUET: {
+        enabled: true,
+        configId: '137027166', // Example UET config ID
+        autoLoad: false // Set to true if you want to auto-load UET when consent is given
+    },
+    
+    // Google Consent Mode Configuration
+    googleConsentMode: {
+        enabled: true,
+        defaultConsentState: {
+            ad_storage: 'denied',
+            analytics_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            personalization_storage: 'denied',
+            functionality_storage: 'denied',
+            security_storage: 'granted'
+        }
     },
     
     // UI Theme selection
@@ -315,15 +303,9 @@ window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 
 // Set default consent (deny all except security)
-gtag('consent', 'default', {
-    'ad_storage': 'denied',
-    'analytics_storage': 'denied',
-    'ad_user_data': 'denied',
-    'ad_personalization': 'denied',
-    'personalization_storage': 'denied',
-    'functionality_storage': 'denied',
-    'security_storage': 'granted'
-});
+if (config.googleConsentMode.enabled) {
+    gtag('consent', 'default', config.googleConsentMode.defaultConsentState);
+}
 
 // Enhanced cookie database with detailed descriptions
 const cookieDatabase = {
@@ -377,30 +359,7 @@ const cookieDatabase = {
     '_gid': { category: 'analytics', duration: '1 day', description: 'Google Analytics' },
     '_gat': { category: 'analytics', duration: '1 minute', description: 'Google Analytics throttle' },
     'PHPSESSID': { category: 'functional', duration: 'Session', description: 'PHP session' },
-    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' },
-    'lu': { category: 'advertising', duration: '2 years', description: 'Facebook logged-in user' },
-    'xs': { category: 'advertising', duration: '90 days', description: 'Facebook session ID' },
-    'c_user': { category: 'advertising', duration: '90 days', description: 'Facebook user ID' },
-    'm_user': { category: 'advertising', duration: '90 days', description: 'Facebook mobile user ID' },
-    'pl': { category: 'advertising', duration: '90 days', description: 'Facebook platform login' },
-    'dbln': { category: 'advertising', duration: '2 years', description: 'Facebook device-based login' },
-    'aks': { category: 'advertising', duration: '30 days', description: 'Facebook Account Kit' },
-    'aksb': { category: 'advertising', duration: '30 minutes', description: 'Facebook Account Kit auth' },
-    'sfau': { category: 'advertising', duration: '1 day', description: 'Facebook failed login recovery' },
-    'ick': { category: 'advertising', duration: '2 years', description: 'Facebook encryption key' },
-    'csm': { category: 'advertising', duration: '90 days', description: 'Facebook insecure indicator' },
-    's': { category: 'advertising', duration: '90 days', description: 'Facebook browser ID' },
-    'sb': { category: 'advertising', duration: '2 years', description: 'Facebook browser ID' },
-    '_fbc': { category: 'advertising', duration: '2 years', description: 'Facebook click ID' },
-    'oo': { category: 'advertising', duration: '5 years', description: 'Facebook ad opt-out' },
-    'ddid': { category: 'advertising', duration: '28 days', description: 'Facebook app install' },
-    'locale': { category: 'advertising', duration: '7 days', description: 'Facebook locale' },
-    'js_ver': { category: 'advertising', duration: '7 days', description: 'Facebook JS version' },
-    'rc': { category: 'advertising', duration: '7 days', description: 'Facebook performance' },
-    'campaign_click_url': { category: 'advertising', duration: '30 days', description: 'Facebook click URL' },
-    'usida': { category: 'advertising', duration: 'Session', description: 'Facebook targeted ads' },
-    'wd': { category: 'functional', duration: 'Session', description: 'Facebook window dimensions' },
-    'presence': { category: 'functional', duration: 'Session', description: 'Facebook chat state' }
+    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' }
 };
 
 // Language translations (keeping only en and fr as requested)
@@ -475,12 +434,6 @@ const translations = {
     }
 };
 
-// Country to language mapping
-const countryLanguageMap = {
-    'US': 'en', 'GB': 'en', 'CA': 'en', 'AU': 'en', 'NZ': 'en', 'IN': 'en',
-    'FR': 'fr', 'BE': 'fr', 'CH': 'fr', 'CA': 'fr', 'LU': 'fr'
-};
-
 // Analytics data storage
 let consentAnalytics = {
     total: {
@@ -494,30 +447,6 @@ let consentAnalytics = {
 // Password protection for analytics
 let isDashboardAuthenticated = false;
 
-// Banner scheduling variables
-let bannerTimer = null;
-let bannerShown = false;
-
-// Microsoft UET consent tracking variables
-let uetq = window.uetq || [];
-let uetConsentData = {
-    mid: generateUUID(),
-    box: 1,
-    evt: 'consent',
-    src: 'default',
-    cdb: 'AQTR',
-    asc: 'D'
-};
-
-// Generate UUID for Microsoft UET
-function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
 // Load analytics data from localStorage
 function loadAnalyticsData() {
     const savedData = localStorage.getItem('consentAnalytics');
@@ -525,6 +454,7 @@ function loadAnalyticsData() {
         consentAnalytics = JSON.parse(savedData);
     }
     
+    // Initialize today's data if not exists
     const today = new Date().toISOString().split('T')[0];
     if (!consentAnalytics.daily[today]) {
         consentAnalytics.daily[today] = {
@@ -534,6 +464,7 @@ function loadAnalyticsData() {
         };
     }
     
+    // Check if dashboard is authenticated
     if (config.analytics.passwordProtect) {
         isDashboardAuthenticated = getCookie('dashboard_auth') === 'true';
     } else {
@@ -550,6 +481,7 @@ function saveAnalyticsData() {
 function updateConsentStats(status) {
     const today = new Date().toISOString().split('T')[0];
     
+    // Update totals
     if (status === 'accepted') {
         consentAnalytics.total.accepted++;
         consentAnalytics.daily[today].accepted++;
@@ -562,6 +494,166 @@ function updateConsentStats(status) {
     }
     
     saveAnalyticsData();
+}
+
+// Generate analytics dashboard HTML with 1 day, 7 days, and 30 days sections
+function generateAnalyticsDashboard(language = 'en') {
+    const lang = translations[language] || translations.en;
+    
+    // Calculate totals
+    const total = consentAnalytics.total.accepted + 
+                 consentAnalytics.total.rejected + 
+                 consentAnalytics.total.custom;
+    
+    const acceptedPercent = total > 0 ? Math.round((consentAnalytics.total.accepted / total) * 100) : 0;
+    const rejectedPercent = total > 0 ? Math.round((consentAnalytics.total.rejected / total) * 100) : 0;
+    const customPercent = total > 0 ? Math.round((consentAnalytics.total.custom / total) * 100) : 0;
+    
+    // Get last 1 day data
+    const today = new Date().toISOString().split('T')[0];
+    const last1Day = {};
+    last1Day[today] = consentAnalytics.daily[today] || { accepted: 0, rejected: 0, custom: 0 };
+    
+    // Get last 7 days data
+    const last7Days = {};
+    const dates = Object.keys(consentAnalytics.daily).sort().reverse().slice(0, 7);
+    dates.forEach(date => {
+        last7Days[date] = consentAnalytics.daily[date];
+    });
+    
+    // Get last 30 days data
+    const last30Days = {};
+    const monthlyDates = Object.keys(consentAnalytics.daily).sort().reverse().slice(0, 30);
+    monthlyDates.forEach(date => {
+        last30Days[date] = consentAnalytics.daily[date];
+    });
+    
+    return `
+    <div class="analytics-dashboard">
+        <h3>${lang.dashboardTitle}</h3>
+        
+        <div class="stats-summary">
+            <div class="stat-card accepted">
+                <h4>${lang.statsAccepted}</h4>
+                <div class="stat-value">${consentAnalytics.total.accepted}</div>
+                <div class="stat-percentage">${acceptedPercent}%</div>
+            </div>
+            
+            <div class="stat-card rejected">
+                <h4>${lang.statsRejected}</h4>
+                <div class="stat-value">${consentAnalytics.total.rejected}</div>
+                <div class="stat-percentage">${rejectedPercent}%</div>
+            </div>
+            
+            <div class="stat-card custom">
+                <h4>${lang.statsCustom}</h4>
+                <div class="stat-value">${consentAnalytics.total.custom}</div>
+                <div class="stat-percentage">${customPercent}%</div>
+            </div>
+            
+            <div class="stat-card total">
+                <h4>${lang.statsTotal}</h4>
+                <div class="stat-value">${total}</div>
+                <div class="stat-percentage">100%</div>
+            </div>
+        </div>
+        
+        <div class="time-based-stats">
+            <div class="time-stat">
+                <h4>${lang.statsLast1Day}</h4>
+                <div class="stat-bars">
+                    ${Object.entries(last1Day).map(([date, data]) => {
+                        const dayTotal = data.accepted + data.rejected + data.custom;
+                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
+                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
+                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
+                        
+                        return `
+                        <div class="stat-bar-container">
+                            <div class="stat-bar-label">${date}</div>
+                            <div class="stat-bar">
+                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
+                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
+                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
+                            </div>
+                            <div class="stat-bar-legend">
+                                <span>${data.accepted} ${lang.statsAccepted}</span>
+                                <span>${data.custom} ${lang.statsCustom}</span>
+                                <span>${data.rejected} ${lang.statsRejected}</span>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="time-stat">
+                <h4>${lang.statsLast7Days}</h4>
+                <div class="stat-bars">
+                    ${Object.entries(last7Days).map(([date, data]) => {
+                        const dayTotal = data.accepted + data.rejected + data.custom;
+                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
+                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
+                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
+                        
+                        return `
+                        <div class="stat-bar-container">
+                            <div class="stat-bar-label">${date}</div>
+                            <div class="stat-bar">
+                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
+                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
+                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
+                            </div>
+                            <div class="stat-bar-legend">
+                                <span>${data.accepted} ${lang.statsAccepted}</span>
+                                <span>${data.custom} ${lang.statsCustom}</span>
+                                <span>${data.rejected} ${lang.statsRejected}</span>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="time-stat">
+                <h4>${lang.statsLast30Days}</h4>
+                <div class="stat-bars">
+                    ${Object.entries(last30Days).map(([date, data]) => {
+                        const dayTotal = data.accepted + data.rejected + data.custom;
+                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
+                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
+                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
+                        
+                        return `
+                        <div class="stat-bar-container">
+                            <div class="stat-bar-label">${date}</div>
+                            <div class="stat-bar">
+                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
+                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
+                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
+                            </div>
+                            <div class="stat-bar-legend">
+                                <span>${data.accepted} ${lang.statsAccepted}</span>
+                                <span>${data.custom} ${lang.statsCustom}</span>
+                                <span>${data.rejected} ${lang.statsRejected}</span>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// Generate password prompt HTML
+function generatePasswordPrompt(language = 'en') {
+    const lang = translations[language] || translations.en;
+    
+    return `
+    <div class="password-prompt">
+        <h3>${lang.passwordPrompt}</h3>
+        <input type="password" id="dashboardPasswordInput" placeholder="Password">
+        <button id="dashboardPasswordSubmit">${lang.passwordSubmit}</button>
+        <p id="passwordError" class="error-message"></p>
+    </div>`;
 }
 
 // Check if current domain is allowed
@@ -577,8 +669,9 @@ function isDomainAllowed() {
     });
 }
 
-// Detect user language
+// Detect user language based on country and browser settings
 function detectUserLanguage(geoData) {
+    // First check if language is stored in cookie
     if (config.behavior.rememberLanguage) {
         const preferredLanguage = getCookie('preferred_language');
         if (preferredLanguage && translations[preferredLanguage]) {
@@ -586,6 +679,7 @@ function detectUserLanguage(geoData) {
         }
     }
     
+    // Then try to get language from country if auto-detection is enabled
     if (config.languageConfig.autoDetectLanguage && geoData && geoData.country) {
         const countryLang = countryLanguageMap[geoData.country];
         if (countryLang && translations[countryLang]) {
@@ -593,11 +687,13 @@ function detectUserLanguage(geoData) {
         }
     }
     
+    // Fallback to browser language
     const browserLang = (navigator.language || 'en').split('-')[0];
     if (translations[browserLang]) {
         return browserLang;
     }
     
+    // Final fallback to configured default language
     return config.languageConfig.defaultLanguage || 'en';
 }
 
@@ -613,6 +709,7 @@ function getAvailableLanguages() {
 function changeLanguage(languageCode) {
     const lang = translations[languageCode] || translations.en;
     
+    // Update banner text
     const banner = document.getElementById('cookieConsentBanner');
     if (banner) {
         banner.querySelector('h2').textContent = lang.title;
@@ -623,6 +720,7 @@ function changeLanguage(languageCode) {
         banner.querySelector('#rejectAllBtn').textContent = lang.reject;
     }
     
+    // Update modal text
     const modal = document.getElementById('cookieSettingsModal');
     if (modal) {
         modal.querySelector('h2').textContent = lang.title;
@@ -649,28 +747,32 @@ function changeLanguage(languageCode) {
         modal.querySelector('#acceptAllSettingsBtn').textContent = lang.accept;
     }
     
+    // Update floating button title
     const floatingButton = document.getElementById('cookieFloatingButton');
     if (floatingButton) {
         floatingButton.title = lang.title;
     }
     
+    // Update analytics dashboard if visible
     const dashboard = document.querySelector('.analytics-dashboard');
     if (dashboard) {
         dashboard.innerHTML = generateAnalyticsDashboard(languageCode);
     }
     
+    // Update password prompt if visible
     const passwordPrompt = document.querySelector('.password-prompt');
     if (passwordPrompt) {
         passwordPrompt.innerHTML = generatePasswordPrompt(languageCode);
         setupPasswordPromptEvents();
     }
     
+    // Store selected language in cookie
     if (config.behavior.rememberLanguage) {
         setCookie('preferred_language', languageCode, 365);
     }
 }
 
-// Enhanced cookie scanning function
+// Enhanced cookie scanning function with better matching
 function scanAndCategorizeCookies() {
     const cookies = document.cookie.split(';');
     const result = {
@@ -687,6 +789,7 @@ function scanAndCategorizeCookies() {
         
         let categorized = false;
         
+        // Check against known cookie patterns
         for (const pattern in cookieDatabase) {
             if (name.startsWith(pattern) || name === pattern) {
                 const cookieInfo = cookieDatabase[pattern];
@@ -714,7 +817,7 @@ function scanAndCategorizeCookies() {
     return result;
 }
 
-// Get cookie duration
+// Enhanced getCookieDuration function
 function getCookieDuration(name) {
     const cookieMatch = document.cookie.match(new RegExp(`${name}=[^;]+(;|$)`));
     if (!cookieMatch) return "Session";
@@ -729,7 +832,7 @@ function getCookieDuration(name) {
     return "Session";
 }
 
-// Generate cookie table
+// Generate cookie table with mobile-friendly display
 function generateCookieTable(cookies) {
     return `
     <table class="cookie-details-table">
@@ -762,6 +865,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
     const lang = translations[language] || translations.en;
     const availableLanguages = getAvailableLanguages();
     
+    // Generate cookie tables for each category
     const generateCategorySection = (category) => {
         const cookies = detectedCookies[category];
         const categoryKey = category === 'functional' ? 'essential' : category;
@@ -791,6 +895,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         </div>`;
     };
     
+    // Generate language selector dropdown if enabled
     const languageSelector = config.languageConfig.showLanguageSelector ? `
     <div class="language-selector">
         <select id="cookieLanguageSelect">
@@ -800,6 +905,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         </select>
     </div>` : '';
     
+    // Generate admin dashboard button if analytics enabled
     const adminButton = config.analytics.enabled && config.analytics.showDashboard && config.behavior.showAdminButton ? `
     <div id="cookieAdminButton" class="cookie-admin-button" title="${lang.dashboardTitle}">
         <svg viewBox="0 0 24 24" width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke="none">
@@ -1721,6 +1827,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             grid-template-columns: repeat(2, 1fr);
         }
     }
+    
     @media (min-width: 768px) {
         .cookie-consent-buttons {
             flex-direction: row;
@@ -1729,6 +1836,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             flex: 1;
         }
     }
+    
     @media (max-width: 768px) {
         .cookie-consent-banner {
             width: 90%;
@@ -1882,8 +1990,10 @@ function initializeCookieConsent(detectedCookies, language) {
         }
     }
     
+    // Set up event listeners
     setupEventListeners();
     
+    // Setup cookie details toggles
     document.querySelectorAll('.cookie-details-header').forEach(header => {
         header.addEventListener('click', function() {
             const content = this.nextElementSibling;
@@ -1898,6 +2008,7 @@ function initializeCookieConsent(detectedCookies, language) {
         });
     });
     
+    // Setup cookie value toggles for mobile
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('toggle-cookie-value')) {
             const cell = e.target.closest('.cookie-value-cell');
@@ -1918,6 +2029,7 @@ function initializeCookieConsent(detectedCookies, language) {
         }
     });
     
+    // Setup language selector change event
     const languageSelect = document.getElementById('cookieLanguageSelect');
     if (languageSelect) {
         languageSelect.addEventListener('change', function() {
@@ -1925,6 +2037,7 @@ function initializeCookieConsent(detectedCookies, language) {
         });
     }
     
+    // Setup admin button if enabled
     if (config.analytics.enabled && config.analytics.showDashboard && config.behavior.showAdminButton) {
         const adminButton = document.getElementById('cookieAdminButton');
         if (adminButton) {
@@ -1936,28 +2049,18 @@ function initializeCookieConsent(detectedCookies, language) {
         }
     }
     
+    // Setup password prompt events if needed
     if (config.analytics.passwordProtect && !isDashboardAuthenticated) {
         setupPasswordPromptEvents();
     }
     
+    // Setup "See Consent Analytics" link in the modal footer
     const seeAnalyticsLink = document.querySelector('.see-analytics-link');
     if (seeAnalyticsLink) {
         seeAnalyticsLink.addEventListener('click', function(e) {
             e.preventDefault();
             showAnalyticsDashboard();
         });
-    }
-    
-    if (config.behavior.bannerSchedule.enabled && config.behavior.bannerSchedule.durationMinutes) {
-        if (bannerTimer) {
-            clearTimeout(bannerTimer);
-        }
-        
-        bannerTimer = setTimeout(() => {
-            if (!getCookie('cookie_consent')) {
-                hideCookieBanner();
-            }
-        }, config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
     }
 }
 
@@ -1973,6 +2076,7 @@ function setupPasswordPromptEvents() {
                 isDashboardAuthenticated = true;
                 setCookie('dashboard_auth', 'true', config.analytics.passwordCookieDuration);
                 
+                // Update the dashboard content
                 const lang = document.getElementById('cookieLanguageSelect') ? 
                     document.getElementById('cookieLanguageSelect').value : 'en';
                 document.querySelector('.cookie-analytics-body').innerHTML = generateAnalyticsDashboard(lang);
@@ -2059,7 +2163,6 @@ function showCookieBanner() {
     setTimeout(() => {
         banner.classList.add('show');
     }, 10);
-    bannerShown = true;
 }
 
 function hideCookieBanner() {
@@ -2068,7 +2171,6 @@ function hideCookieBanner() {
     setTimeout(() => {
         banner.style.display = 'none';
     }, 400);
-    bannerShown = false;
 }
 
 function showCookieSettings() {
@@ -2263,9 +2365,7 @@ function loadCookiesAccordingToConsent(consentData) {
     }
 }
 
-// Update consent mode for both Google and Microsoft
 function updateConsentMode(consentData) {
-    // Google Consent Mode v2
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
         'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
@@ -2276,63 +2376,60 @@ function updateConsentMode(consentData) {
         'security_storage': 'granted'
     };
 
-    // Determine GCS signal based on consent status and categories
-    let gcsSignal = 'G100'; // Default to all denied
-    
-    if (consentData.status === 'accepted') {
-        gcsSignal = 'G111'; // All granted
-    } else if (consentData.status === 'custom') {
-        if (consentData.categories.analytics && !consentData.categories.advertising) {
-            gcsSignal = 'G101'; // Analytics granted, ads denied
-        } else if (consentData.categories.advertising && !consentData.categories.analytics) {
-            gcsSignal = 'G110'; // Ads granted, analytics denied
-        } else if (consentData.categories.analytics && consentData.categories.advertising) {
-            gcsSignal = 'G111'; // Both granted (same as accept all)
-        } else {
-            gcsSignal = ''; // Both denied (same as reject all)
-        }
-    }
-
     // Update Google Consent Mode
-    gtag('consent', 'update', consentStates);
+    if (config.googleConsentMode.enabled) {
+        gtag('consent', 'update', consentStates);
+    }
     
     // Update Microsoft UET consent
-    updateMicrosoftUETConsent(consentData);
+    if (config.microsoftUET.enabled) {
+        updateMicrosoftUETConsent(consentData);
+    }
     
     // Push to dataLayer for tracking
     window.dataLayer.push({
         'event': 'cookie_consent_update',
         'consent_mode': consentStates,
-        'gcs': gcsSignal,
+        'gcs': consentData.gcs || '',
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
     });
 }
 
-// Update Microsoft UET consent
+// Microsoft UET consent update function
 function updateMicrosoftUETConsent(consentData) {
-    if (!config.platforms.microsoft.enabled) return;
+    if (!window.uetq) return;
     
-    // Update UET consent data
-    uetConsentData = {
-        mid: generateUUID(),
-        box: 1,
-        evt: 'consent',
-        src: 'update',
-        cdb: consentData.categories.advertising ? 'AQTT' : 'AQTR',
-        asc: consentData.categories.advertising ? 'G' : 'D'
-    };
+    // Determine the consent state for Microsoft UET
+    const uetConsent = consentData.categories.advertising ? 'G' : 'D';
     
-    // Push to UET queue
-    if (window.uetq) {
-        window.uetq.push(uetConsentData);
-    } else {
-        window.uetq = [uetConsentData];
+    // Push the consent update to UET
+    window.uetq = window.uetq || [];
+    window.uetq.push({
+        'consent': uetConsent,
+        'configId': config.microsoftUET.configId,
+        'src': consentData.status === 'accepted' ? 'update' : 'default',
+        'evt': 'consent'
+    });
+    
+    // If consent is granted and autoLoad is enabled, load the UET tag
+    if (consentData.categories.advertising && config.microsoftUET.autoLoad) {
+        loadMicrosoftUET();
     }
-    
-    // Set UET consent cookie
-    setCookie('mscc', consentData.categories.advertising ? '1' : '0', 365);
+}
+
+// Load Microsoft UET tag
+function loadMicrosoftUET() {
+    if (window.uetq && !window.uetq.loaded) {
+        (function(w,d,t,r,u){
+            w[u]=w[u]||[];w[u].push({'uetq.ready':function(){
+                if(w.uetq)w.uetq.call(d,t,r,u)}});
+            var s=d.createElement(t);s.src=r;s.async=1;
+            var f=d.getElementsByTagName(t)[0];f.parentNode.insertBefore(s,f);
+        })(window,document,'script','//bat.bing.com/bat.js','uetq');
+        window.uetq.loaded = true;
+    }
 }
 
 // Cookie management functions
@@ -2359,14 +2456,16 @@ function getCookie(name) {
 
 // Tracking functions
 function loadAnalyticsCookies() {
-    if (config.platforms.google.enabled && typeof gtag === 'function') {
+    console.log('Loading analytics cookies');
+    if (typeof ga === 'undefined' && typeof gtag === 'function') {
         gtag('js', new Date());
-        gtag('config', config.platforms.google.gtagConfig.measurementId || 'G-XXXXXXXXXX');
+        gtag('config', 'YOUR_GA4_MEASUREMENT_ID');
     }
 }
 
 function loadAdvertisingCookies() {
-    if (config.platforms.facebook.enabled && typeof fbq === 'undefined') {
+    console.log('Loading advertising cookies');
+    if (typeof fbq === 'undefined') {
         !function(f,b,e,v,n,t,s)
         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
         n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -2375,186 +2474,29 @@ function loadAdvertisingCookies() {
         t.src=v;s=b.getElementsByTagName(e)[0];
         s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', config.platforms.facebook.pixelId || 'XXXXXXXXXXXXXXX');
+        fbq('init', 'YOUR_PIXEL_ID');
         fbq('track', 'PageView');
-    }
-    
-    if (config.platforms.microsoft.enabled && typeof window.uetq !== 'undefined') {
-        window.uetq.push(uetConsentData);
     }
 }
 
 function loadPerformanceCookies() {
-    // Performance tracking cookies can be loaded here
-}
-
-// Generate analytics dashboard HTML
-function generateAnalyticsDashboard(language = 'en') {
-    const lang = translations[language] || translations.en;
-    
-    const total = consentAnalytics.total.accepted + 
-                 consentAnalytics.total.rejected + 
-                 consentAnalytics.total.custom;
-    
-    const acceptedPercent = total > 0 ? Math.round((consentAnalytics.total.accepted / total) * 100) : 0;
-    const rejectedPercent = total > 0 ? Math.round((consentAnalytics.total.rejected / total) * 100) : 0;
-    const customPercent = total > 0 ? Math.round((consentAnalytics.total.custom / total) * 100) : 0;
-    
-    const today = new Date().toISOString().split('T')[0];
-    const last1Day = {};
-    last1Day[today] = consentAnalytics.daily[today] || { accepted: 0, rejected: 0, custom: 0 };
-    
-    const last7Days = {};
-    const dates = Object.keys(consentAnalytics.daily).sort().reverse().slice(0, 7);
-    dates.forEach(date => {
-        last7Days[date] = consentAnalytics.daily[date];
-    });
-    
-    const last30Days = {};
-    const monthlyDates = Object.keys(consentAnalytics.daily).sort().reverse().slice(0, 30);
-    monthlyDates.forEach(date => {
-        last30Days[date] = consentAnalytics.daily[date];
-    });
-    
-    return `
-    <div class="analytics-dashboard">
-        <h3>${lang.dashboardTitle}</h3>
-        
-        <div class="stats-summary">
-            <div class="stat-card accepted">
-                <h4>${lang.statsAccepted}</h4>
-                <div class="stat-value">${consentAnalytics.total.accepted}</div>
-                <div class="stat-percentage">${acceptedPercent}%</div>
-            </div>
-            
-            <div class="stat-card rejected">
-                <h4>${lang.statsRejected}</h4>
-                <div class="stat-value">${consentAnalytics.total.rejected}</div>
-                <div class="stat-percentage">${rejectedPercent}%</div>
-            </div>
-            
-            <div class="stat-card custom">
-                <h4>${lang.statsCustom}</h4>
-                <div class="stat-value">${consentAnalytics.total.custom}</div>
-                <div class="stat-percentage">${customPercent}%</div>
-            </div>
-            
-            <div class="stat-card total">
-                <h4>${lang.statsTotal}</h4>
-                <div class="stat-value">${total}</div>
-                <div class="stat-percentage">100%</div>
-            </div>
-        </div>
-        
-        <div class="time-based-stats">
-            <div class="time-stat">
-                <h4>${lang.statsLast1Day}</h4>
-                <div class="stat-bars">
-                    ${Object.entries(last1Day).map(([date, data]) => {
-                        const dayTotal = data.accepted + data.rejected + data.custom;
-                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
-                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
-                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
-                        
-                        return `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${date}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${data.accepted} ${lang.statsAccepted}</span>
-                                <span>${data.custom} ${lang.statsCustom}</span>
-                                <span>${data.rejected} ${lang.statsRejected}</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-            
-            <div class="time-stat">
-                <h4>${lang.statsLast7Days}</h4>
-                <div class="stat-bars">
-                    ${Object.entries(last7Days).map(([date, data]) => {
-                        const dayTotal = data.accepted + data.rejected + data.custom;
-                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
-                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
-                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
-                        
-                        return `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${date}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${data.accepted} ${lang.statsAccepted}</span>
-                                <span>${data.custom} ${lang.statsCustom}</span>
-                                <span>${data.rejected} ${lang.statsRejected}</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-            
-            <div class="time-stat">
-                <h4>${lang.statsLast30Days}</h4>
-                <div class="stat-bars">
-                    ${Object.entries(last30Days).map(([date, data]) => {
-                        const dayTotal = data.accepted + data.rejected + data.custom;
-                        const dayAcceptedPercent = dayTotal > 0 ? (data.accepted / dayTotal) * 100 : 0;
-                        const dayRejectedPercent = dayTotal > 0 ? (data.rejected / dayTotal) * 100 : 0;
-                        const dayCustomPercent = dayTotal > 0 ? (data.custom / dayTotal) * 100 : 0;
-                        
-                        return `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${date}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${dayAcceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${dayCustomPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${dayRejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${data.accepted} ${lang.statsAccepted}</span>
-                                <span>${data.custom} ${lang.statsCustom}</span>
-                                <span>${data.rejected} ${lang.statsRejected}</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-    </div>`;
-}
-
-// Generate password prompt HTML
-function generatePasswordPrompt(language = 'en') {
-    const lang = translations[language] || translations.en;
-    
-    return `
-    <div class="password-prompt">
-        <h3>${lang.passwordPrompt}</h3>
-        <input type="password" id="dashboardPasswordInput" placeholder="Password">
-        <button id="dashboardPasswordSubmit">${lang.passwordSubmit}</button>
-        <p id="passwordError" class="error-message"></p>
-    </div>`;
+    console.log('Loading performance cookies');
 }
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', function() {
+    // First check if we should run on this domain
     if (!isDomainAllowed()) {
         console.log('Cookie consent banner disabled for this domain');
         return;
     }
     
+    // Load analytics data
     if (config.analytics.enabled) {
         loadAnalyticsData();
     }
     
+    // Get geo data from dataLayer or detect
     let geoData = {};
     if (window.dataLayer && window.dataLayer.length > 0) {
         const geoItem = window.dataLayer.find(item => item.country || item.region || item.city);
@@ -2568,9 +2510,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Detect language
     const detectedLanguage = detectUserLanguage(geoData);
-    const detectedCookies = scanAndCategorizeCookies();
     
+    const detectedCookies = scanAndCategorizeCookies();
     if (detectedCookies.uncategorized.length > 0) {
         console.log('Uncategorized cookies found:', detectedCookies.uncategorized);
     }
@@ -2591,7 +2534,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 10000);
 });
 
-// Update cookie tables when new cookies are detected
+// Handle scroll-based acceptance
 function updateCookieTables(detectedCookies) {
     const categories = ['functional', 'analytics', 'performance', 'advertising', 'uncategorized'];
     
@@ -2604,6 +2547,7 @@ function updateCookieTables(detectedCookies) {
                     generateCookieTable(detectedCookies[category]) : 
                     '<p class="no-cookies-message">No cookies in this category detected.</p>';
                 
+                // Force open the category if new cookies are detected
                 if (detectedCookies[category].length > 0) {
                     content.style.display = 'block';
                     container.querySelector('.toggle-details').textContent = '−';
