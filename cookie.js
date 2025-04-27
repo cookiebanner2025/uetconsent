@@ -2792,167 +2792,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 10000
 
                 // Update cookie tables when new cookies are detected
-function updateCookieTables(newCookies) {
+ // Handle scroll-based acceptance
+    if (config.behavior.acceptOnScroll) {
+        window.addEventListener('scroll', handleScrollAcceptance);
+    }
+});
+
+// Handle scroll-based acceptance
+function updateCookieTables(detectedCookies) {
     const categories = ['functional', 'analytics', 'performance', 'advertising', 'uncategorized'];
-    categories.forEach(category => {
-        const container = document.querySelector(`input[data-category="${category}"]`);
-        if (container) {
-            const parent = container.closest('.cookie-category');
-            if (parent) {
-                const detailsContainer = parent.querySelector('.cookie-details-container');
-                if (detailsContainer) {
-                    const content = detailsContainer.querySelector('.cookie-details-content');
-                    if (content) {
-                        content.innerHTML = newCookies[category].length > 0 ? 
-                            generateCookieTable(newCookies[category]) : 
-                            `<p class="no-cookies-message">No cookies in this category detected.</p>`;
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Handle scroll acceptance if enabled
-if (config.behavior.acceptOnScroll) {
-    let scrollTimer;
-    window.addEventListener('scroll', function() {
-        if (!getCookie('cookie_consent') && bannerShown) {
-            clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(function() {
-                const scrollPercentage = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
-                if (scrollPercentage > 70) { // Accept if scrolled 70% of page
-                    acceptAllCookies();
-                    hideCookieBanner();
-                }
-            }, 200);
-        }
-    });
-}
-
-// Handle continue browsing acceptance if enabled
-if (config.behavior.acceptOnContinue) {
-    document.addEventListener('click', function() {
-        if (!getCookie('cookie_consent') && bannerShown) {
-            acceptAllCookies();
-            hideCookieBanner();
-        }
-    }, { once: true });
-}
-
-// Enhanced cookie functions with domain handling
-function deleteCookie(name) {
-    const domainParts = window.location.hostname.split('.');
-    let domain = domainParts.slice(-2).join('.');
-    if (domainParts.length > 2) {
-        domain = '.' + domain; // Add leading dot for subdomains
-    }
     
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
-}
-
-// Export functions for external access if needed
-window.cookieConsentAPI = {
-    showBanner: showCookieBanner,
-    hideBanner: hideCookieBanner,
-    showSettings: showCookieSettings,
-    showAnalytics: showAnalyticsDashboard,
-    acceptAll: acceptAllCookies,
-    rejectAll: rejectAllCookies,
-    getConsentData: function() {
-        const consent = getCookie('cookie_consent');
-        return consent ? JSON.parse(consent) : null;
-    },
-    getAnalyticsData: function() {
-        return config.analytics.enabled ? consentAnalytics : null;
-    },
-    changeLanguage: changeLanguage,
-    resetConsent: function() {
-        deleteCookie('cookie_consent');
-        deleteCookie('dashboard_auth');
-        deleteCookie('preferred_language');
-        location.reload();
-    }
-};
-
-// Initialize on window load as fallback
-window.addEventListener('load', function() {
-    if (!document.getElementById('cookieConsentBanner')) {
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!isDomainAllowed()) return;
-            
-            const geoData = {};
-            const detectedLanguage = detectUserLanguage(geoData);
-            const detectedCookies = scanAndCategorizeCookies();
-            
-            injectConsentHTML(detectedCookies, detectedLanguage);
-            initializeCookieConsent(detectedCookies, detectedLanguage);
-            
-            if (getCookie('cookie_consent')) {
-                showFloatingButton();
-            }
-        });
-    }
-});
-
-// Support for Turbolinks and other SPA frameworks
-document.addEventListener('turbolinks:load', function() {
-    if (!document.getElementById('cookieConsentBanner')) {
-        if (!isDomainAllowed()) return;
-        
-        const geoData = {};
-        const detectedLanguage = detectUserLanguage(geoData);
-        const detectedCookies = scanAndCategorizeCookies();
-        
-        injectConsentHTML(detectedCookies, detectedLanguage);
-        initializeCookieConsent(detectedCookies, detectedLanguage);
-        
-        if (getCookie('cookie_consent')) {
-            showFloatingButton();
-        }
-    }
-});
-
-// MutationObserver to handle dynamically added content
-const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-        if (!document.getElementById('cookieConsentBanner')) {
-            if (!isDomainAllowed()) return;
-            
-            const geoData = {};
-            const detectedLanguage = detectUserLanguage(geoData);
-            const detectedCookies = scanAndCategorizeCookies();
-            
-            injectConsentHTML(detectedCookies, detectedLanguage);
-            initializeCookieConsent(detectedCookies, detectedLanguage);
-            
-            if (getCookie('cookie_consent')) {
-                showFloatingButton();
+    categories.forEach(category => {
+        const container = document.querySelector(`input[data-category="${category}"]`)?.closest('.cookie-category');
+        if (container) {
+            const content = container.querySelector('.cookie-details-content');
+            if (content) {
+                content.innerHTML = detectedCookies[category].length > 0 ? 
+                    generateCookieTable(detectedCookies[category]) : 
+                    '<p class="no-cookies-message">No cookies in this category detected.</p>';
+                
+                // Force open the category if new cookies are detected
+                if (detectedCookies[category].length > 0) {
+                    content.style.display = 'block';
+                    container.querySelector('.toggle-details').textContent = '−';
+                }
             }
         }
     });
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
-});
-
-// Final initialization check
-if (!document.getElementById('cookieConsentBanner')) {
-    document.addEventListener('DOMContentLoaded', function() {
-        if (!isDomainAllowed()) return;
-        
-        const geoData = {};
-        const detectedLanguage = detectUserLanguage(geoData);
-        const detectedCookies = scanAndCategorizeCookies();
-        
-        injectConsentHTML(detectedCookies, detectedLanguage);
-        initializeCookieConsent(detectedCookies, detectedLanguage);
-        
-        if (getCookie('cookie_consent')) {
-            showFloatingButton();
-        }
-    });
-}
