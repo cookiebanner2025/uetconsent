@@ -1,7 +1,6 @@
 /**
  * Ultimate GDPR Cookie Consent Solution v4.5 - Advanced Edition
- * - Added Microsoft UET consent mode support
- * - Enhanced Google Consent Mode v2 compliance
+ * - Now with full support for Google Consent Mode v2 and Microsoft UET
  * - Fully organized configuration with separate styling controls
  * - Complete admin dashboard with password protection
  * - Enhanced analytics tracking
@@ -59,32 +58,6 @@ const config = {
             daysOfWeek: [1,2,3,4,5], // 0=Sunday, 1=Monday, etc.
             durationDays: 365,       // Alternative: show banner for X days from first visit
             durationMinutes: 2       // Alternative: show banner for X minutes per session
-        }
-    },
-    
-    // Microsoft UET Configuration
-    microsoftUET: {
-        enabled: true,
-        tagId: '', // Your UET tag ID
-        domain: 'bat.bing.com',
-        defaultConsentState: 'D', // D for denied (default), G for granted
-        consentEventName: 'consent',
-        pageLoadEventName: 'pageLoad',
-        sourceDefault: 'default',
-        sourceUpdate: 'update'
-    },
-    
-    // Google Consent Mode Configuration
-    googleConsentMode: {
-        enabled: true,
-        defaultConsentState: {
-            'ad_storage': 'denied',
-            'analytics_storage': 'denied',
-            'ad_user_data': 'denied',
-            'ad_personalization': 'denied',
-            'personalization_storage': 'denied',
-            'functionality_storage': 'denied',
-            'security_storage': 'granted'
         }
     },
     
@@ -323,15 +296,74 @@ const config = {
 window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 
+// Initialize Microsoft UET if not already present
+window.uetq = window.uetq || [];
+window.uetq.push('setConsentGiven', false); // Default to no consent
+
 // Set default consent (deny all except security)
-if (config.googleConsentMode.enabled) {
-    gtag('consent', 'default', config.googleConsentMode.defaultConsentState);
+function initializeDefaultConsent() {
+    // Google Consent Mode v2 default state
+    gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'analytics_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'personalization_storage': 'denied',
+        'functionality_storage': 'denied',
+        'security_storage': 'granted'
+    });
+    
+    // Fire default state for Microsoft UET
+    fireMicrosoftConsentEvent('default', 'D');
 }
 
-// Initialize Microsoft UET default state
-if (config.microsoftUET.enabled) {
-    // Send default consent state to Microsoft UET
-    sendMicrosoftUETConsent(config.microsoftUET.defaultConsentState, config.microsoftUET.sourceDefault);
+// Fire Microsoft UET consent event
+function fireMicrosoftConsentEvent(source, consentStatus) {
+    // Create a unique ID for this request
+    const requestId = generateUUID();
+    
+    // Fire the default state event
+    const defaultParams = {
+        evt: 'consent',
+        src: source,
+        asc: consentStatus,
+        mid: requestId,
+        bo: 1
+    };
+    
+    // Push to UET queue
+    window.uetq.push('event', 'consent', defaultParams);
+    
+    // Also send via image beacon for reliability
+    sendMicrosoftBeacon(defaultParams);
+}
+
+// Generate a UUID for Microsoft requests
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// Send Microsoft beacon
+function sendMicrosoftBeacon(params) {
+    const baseUrl = 'https://bat.bing.com/action/0?';
+    const queryParams = new URLSearchParams();
+    
+    // Add required parameters
+    queryParams.append('ti', 'YOUR_TAG_ID'); // Replace with your actual tag ID
+    queryParams.append('Ver', '2');
+    
+    // Add consent parameters
+    for (const key in params) {
+        queryParams.append(key, params[key]);
+    }
+    
+    // Create and send the beacon
+    const img = new Image();
+    img.src = baseUrl + queryParams.toString();
 }
 
 // Enhanced cookie database with detailed descriptions
@@ -489,69 +521,8 @@ const translations = {
     }
 };
 
-// Country to language mapping for auto-translation (keeping all mappings)
-const countryLanguageMap = {
-    // EU Countries
-    'AT': 'de',     // Austria
-    'BE': 'nl',     // Belgium (Dutch)
-    'BE': 'fr',     // Belgium (French)
-    'BG': 'bg',     // Bulgaria
-    'HR': 'hr',     // Croatia
-    'CY': 'el',     // Cyprus
-    'CZ': 'cs',     // Czech Republic
-    'DK': 'da',     // Denmark
-    'EE': 'et',     // Estonia
-    'FI': 'fi',     // Finland
-    'FR': 'fr',     // France
-    'DE': 'de',     // Germany
-    'GR': 'el',     // Greece
-    'HU': 'hu',     // Hungary
-    'IE': 'en',     // Ireland
-    'IT': 'it',     // Italy
-    'LV': 'lv',     // Latvia
-    'LT': 'lt',     // Lithuania
-    'LU': 'fr',     // Luxembourg
-    'LU': 'de',     // Luxembourg
-    'MT': 'mt',     // Malta
-    'NL': 'nl',     // Netherlands
-    'PL': 'pl',     // Poland
-    'PT': 'pt',     // Portugal
-    'RO': 'ro',     // Romania
-    'SK': 'sk',     // Slovakia
-    'SI': 'sl',     // Slovenia
-    'ES': 'es',     // Spain
-    'SE': 'sv',     // Sweden
-    
-    // Other European countries
-    'AL': 'en',     // Albania
-    'BA': 'en',     // Bosnia and Herzegovina
-    'IS': 'en',     // Iceland
-    'LI': 'de',     // Liechtenstein
-    'MK': 'en',     // North Macedonia
-    'NO': 'en',     // Norway
-    'RS': 'en',     // Serbia
-    'CH': 'de',     // Switzerland
-    'CH': 'fr',     // Switzerland
-    'CH': 'it',     // Switzerland
-    'UA': 'uk',     // Ukraine
-    'GB': 'en',     // United Kingdom
-    
-    // Rest of the world
-    'US': 'en',     // United States
-    'CA': 'en',     // Canada
-    'CA': 'fr',     // Canada (French)
-    'AU': 'en',     // Australia
-    'NZ': 'en',     // New Zealand
-    'ZA': 'en',     // South Africa
-    'IN': 'en',     // India
-    'CN': 'zh',     // China
-    'JP': 'ja',     // Japan
-    'KR': 'ko',     // South Korea
-    'BR': 'pt',     // Brazil
-    'MX': 'es',     // Mexico
-    'AR': 'es',     // Argentina
-    'RU': 'ru'      // Russia
-};
+// Initialize default consent state immediately
+initializeDefaultConsent();
 
 // Analytics data storage
 let consentAnalytics = {
@@ -569,127 +540,6 @@ let isDashboardAuthenticated = false;
 // Banner scheduling variables
 let bannerTimer = null;
 let bannerShown = false;
-
-// ============== MICROSOFT UET FUNCTIONS ============== //
-
-/**
- * Send consent information to Microsoft UET
- * @param {string} consentState - 'D' for denied or 'G' for granted
- * @param {string} source - 'default' or 'update'
- */
-function sendMicrosoftUETConsent(consentState, source) {
-    if (!config.microsoftUET.enabled) return;
-    
-    const params = {
-        evt: config.microsoftUET.consentEventName,
-        src: source,
-        asc: consentState
-    };
-    
-    // Construct the UET URL
-    const queryString = Object.entries(params)
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-        .join('&');
-    
-    const url = `https://${config.microsoftUET.domain}/bat.js?${queryString}`;
-    
-    // Create and append the script tag
-    const script = document.createElement('script');
-    script.src = url;
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-    
-    console.log('Microsoft UET consent sent:', params);
-}
-
-/**
- * Handle Microsoft UET page load event with current consent state
- */
-function handleMicrosoftUETPageLoad() {
-    if (!config.microsoftUET.enabled) return;
-    
-    const consentCookie = getCookie('cookie_consent');
-    let consentState = config.microsoftUET.defaultConsentState;
-    
-    if (consentCookie) {
-        const consentData = JSON.parse(consentCookie);
-        consentState = consentData.status === 'accepted' ? 'G' : 'D';
-    }
-    
-    const params = {
-        evt: config.microsoftUET.pageLoadEventName,
-        asc: consentState
-    };
-    
-    // Construct the UET URL
-    const queryString = Object.entries(params)
-        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-        .join('&');
-    
-    const url = `https://${config.microsoftUET.domain}/bat.js?${queryString}`;
-    
-    // Create and append the script tag
-    const script = document.createElement('script');
-    script.src = url;
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-    
-    console.log('Microsoft UET page load sent:', params);
-}
-
-// ============== GOOGLE CONSENT MODE FUNCTIONS ============== //
-
-/**
- * Update Google Consent Mode settings
- * @param {Object} consentData - The consent data object
- */
-function updateGoogleConsentMode(consentData) {
-    if (!config.googleConsentMode.enabled) return;
-    
-    const consentStates = {
-        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
-        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
-        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
-        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
-        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
-        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
-        'security_storage': 'granted'
-    };
-
-    // Determine GCS signal based on consent status and categories
-    let gcsSignal = 'G100'; // Default to all denied
-    
-    if (consentData.status === 'accepted') {
-        gcsSignal = 'G111'; // All granted
-    } else if (consentData.status === 'custom') {
-        if (consentData.categories.analytics && !consentData.categories.advertising) {
-            gcsSignal = 'G101'; // Analytics granted, ads denied
-        } else if (consentData.categories.advertising && !consentData.categories.analytics) {
-            gcsSignal = 'G110'; // Ads granted, analytics denied
-        } else if (consentData.categories.analytics && consentData.categories.advertising) {
-            gcsSignal = 'G111'; // Both granted (same as accept all)
-        } else {
-            gcsSignal = 'G100'; // Both denied (same as reject all)
-        }
-    }
-
-    gtag('consent', 'update', consentStates);
-    
-    window.dataLayer.push({
-        'event': 'cookie_consent_update',
-        'consent_mode': consentStates,
-        'gcs': gcsSignal,
-        'consent_status': consentData.status,
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
-    
-    console.log('Google Consent Mode updated:', consentStates);
-}
-
-// ============== CORE FUNCTIONS ============== //
 
 // Load analytics data from localStorage
 function loadAnalyticsData() {
@@ -1333,12 +1183,12 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         color: ${config.bannerStyle.linkHoverColor};
     }
 
-.cookie-consent-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 8px;
-}
+    .cookie-consent-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 8px;
+    }
 
     .cookie-btn {
         padding: ${config.buttonStyle.padding};
@@ -1932,7 +1782,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
 
     .stat-card {
         background-color: ${config.dashboardStyle.statCards.background};
-                border-radius: ${config.dashboardStyle.statCards.borderRadius};
+        border-radius: ${config.dashboardStyle.statCards.borderRadius};
         padding: 15px;
         text-align: center;
         transition: all 0.3s ease;
@@ -2108,14 +1958,14 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-@media (min-width: 768px) {
-    .cookie-consent-buttons {
-        flex-direction: row;
+    @media (min-width: 768px) {
+        .cookie-consent-buttons {
+            flex-direction: row;
+        }
+        .cookie-btn {
+            flex: 1;
+        }
     }
-    .cookie-btn {
-        flex: 1;
-    }
-}
     @media (max-width: 768px) {
         .cookie-consent-banner {
             width: 90%;
@@ -2325,11 +2175,6 @@ function initializeCookieConsent(detectedCookies, language) {
     // Check if banner should be shown based on schedule
     const bannerShouldBeShown = shouldShowBanner();
     
-    // Send default consent state to Microsoft UET before any user interaction
-    if (config.microsoftUET.enabled) {
-        sendMicrosoftUETConsent(config.microsoftUET.defaultConsentState, config.microsoftUET.sourceDefault);
-    }
-    
     if (!consentGiven && config.behavior.autoShow && bannerShouldBeShown) {
         setTimeout(() => {
             showCookieBanner();
@@ -2428,11 +2273,6 @@ function initializeCookieConsent(detectedCookies, language) {
                 hideCookieBanner();
             }
         }, config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
-    }
-    
-    // Handle Microsoft UET page load event
-    if (config.microsoftUET.enabled) {
-        handleMicrosoftUETPageLoad();
     }
 }
 
@@ -2626,11 +2466,6 @@ function acceptAllCookies() {
     updateConsentMode(consentData);
     loadCookiesAccordingToConsent(consentData);
     
-    // Send update to Microsoft UET
-    if (config.microsoftUET.enabled) {
-        sendMicrosoftUETConsent('G', config.microsoftUET.sourceUpdate);
-    }
-    
     if (config.analytics.enabled) {
         updateConsentStats('accepted');
     }
@@ -2653,11 +2488,6 @@ function rejectAllCookies() {
     setCookie('cookie_consent', JSON.stringify(consentData), 365);
     updateConsentMode(consentData);
     clearNonEssentialCookies();
-    
-    // Send update to Microsoft UET
-    if (config.microsoftUET.enabled) {
-        sendMicrosoftUETConsent('D', config.microsoftUET.sourceUpdate);
-    }
     
     if (config.analytics.enabled) {
         updateConsentStats('rejected');
@@ -2696,12 +2526,6 @@ function saveCustomSettings() {
     setCookie('cookie_consent', JSON.stringify(consentData), 365);
     updateConsentMode(consentData);
     loadCookiesAccordingToConsent(consentData);
-    
-    // Send update to Microsoft UET
-    if (config.microsoftUET.enabled) {
-        const consentState = (analyticsChecked || advertisingChecked) ? 'G' : 'D';
-        sendMicrosoftUETConsent(consentState, config.microsoftUET.sourceUpdate);
-    }
     
     if (!consentData.categories.analytics) clearCategoryCookies('analytics');
     if (!consentData.categories.performance) clearCategoryCookies('performance');
@@ -2756,9 +2580,32 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 function updateConsentMode(consentData) {
-    if (config.googleConsentMode.enabled) {
-        updateGoogleConsentMode(consentData);
-    }
+    const consentStates = {
+        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
+        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
+        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
+        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
+        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
+        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
+        'security_storage': 'granted'
+    };
+
+    // Update Google Consent Mode
+    gtag('consent', 'update', consentStates);
+    
+    // Update Microsoft UET consent
+    const uetConsentStatus = consentData.categories.advertising ? 'G' : 'D';
+    fireMicrosoftConsentEvent('update', uetConsentStatus);
+    
+    // Push to dataLayer for tracking
+    window.dataLayer.push({
+        'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': consentData.gcs,
+        'consent_status': consentData.status,
+        'consent_categories': consentData.categories,
+        'timestamp': new Date().toISOString()
+    });
 }
 
 // Cookie management functions
@@ -2779,4 +2626,120 @@ function getCookie(name) {
         let c = ca[i];
         while (c.charAt(0) === ' ') c = c.substring(1, c.length);
         if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-   
+    }
+    return null;
+}
+
+// Tracking functions
+function loadAnalyticsCookies() {
+    console.log('Loading analytics cookies');
+    if (typeof ga === 'undefined' && typeof gtag === 'function') {
+        gtag('js', new Date());
+        gtag('config', 'YOUR_GA4_MEASUREMENT_ID');
+    }
+}
+
+function loadAdvertisingCookies() {
+    console.log('Loading advertising cookies');
+    if (typeof fbq === 'undefined') {
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', 'YOUR_PIXEL_ID');
+        fbq('track', 'PageView');
+    }
+}
+
+function loadPerformanceCookies() {
+    console.log('Loading performance cookies');
+}
+
+// Main initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // First check if we should run on this domain
+    if (!isDomainAllowed()) {
+        console.log('Cookie consent banner disabled for this domain');
+        return;
+    }
+    
+    // Load analytics data
+    if (config.analytics.enabled) {
+        loadAnalyticsData();
+    }
+    
+    // Get geo data from dataLayer or detect
+    let geoData = {};
+    if (window.dataLayer && window.dataLayer.length > 0) {
+        const geoItem = window.dataLayer.find(item => item.country || item.region || item.city);
+        if (geoItem) {
+            geoData = {
+                country: geoItem.country || '',
+                region: geoItem.region || '',
+                city: geoItem.city || '',
+                language: geoItem.language || ''
+            };
+        }
+    }
+    
+    // Check geo-targeting restrictions
+    if (!checkGeoTargeting(geoData)) {
+        console.log('Cookie consent banner disabled for this location');
+        return;
+    }
+    
+    // Detect language
+    const detectedLanguage = detectUserLanguage(geoData);
+    
+    const detectedCookies = scanAndCategorizeCookies();
+    if (detectedCookies.uncategorized.length > 0) {
+        console.log('Uncategorized cookies found:', detectedCookies.uncategorized);
+    }
+    
+    injectConsentHTML(detectedCookies, detectedLanguage);
+    initializeCookieConsent(detectedCookies, detectedLanguage);
+    
+    if (getCookie('cookie_consent')) {
+        showFloatingButton();
+    }
+    
+    // Enhanced periodic cookie scan with validation
+    setInterval(() => {
+        const newCookies = scanAndCategorizeCookies();
+        if (JSON.stringify(newCookies) !== JSON.stringify(detectedCookies)) {
+            updateCookieTables(newCookies);
+        }
+    }, 10000);
+    
+    // Handle scroll-based acceptance
+    if (config.behavior.acceptOnScroll) {
+        window.addEventListener('scroll', handleScrollAcceptance);
+    }
+});
+
+// Handle scroll-based acceptance
+function updateCookieTables(detectedCookies) {
+    const categories = ['functional', 'analytics', 'performance', 'advertising', 'uncategorized'];
+    
+    categories.forEach(category => {
+        const container = document.querySelector(`input[data-category="${category}"]`)?.closest('.cookie-category');
+        if (container) {
+            const content = container.querySelector('.cookie-details-content');
+            if (content) {
+                content.innerHTML = detectedCookies[category].length > 0 ? 
+                    generateCookieTable(detectedCookies[category]) : 
+                    '<p class="no-cookies-message">No cookies in this category detected.</p>';
+                
+                // Force open the category if new cookies are detected
+                if (detectedCookies[category].length > 0) {
+                    content.style.display = 'block';
+                    container.querySelector('.toggle-details').textContent = '−';
+                }
+            }
+        }
+    });
+}
