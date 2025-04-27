@@ -1,10 +1,15 @@
 /**
  * Ultimate GDPR Cookie Consent Solution v4.5 - Advanced Edition
- * - Full support for Google Consent Mode v2
- * - Full support for Microsoft UET Consent Mode
+ * - Supports Google Consent Mode v2 and Microsoft UET Consent Mode
+ * - Fully organized configuration with separate styling controls
+ * - Complete admin dashboard with password protection
  * - Enhanced analytics tracking
  * - Multi-language support
- * - Mobile-friendly interface
+ * - Mobile-friendly cookie details display
+ * - Three-section analytics dashboard (1 day, 7 days, 30 days)
+ * - Animation transition controls
+ * - Banner scheduling functionality
+ * - Consent analytics link
  */
 
 // ============== CONFIGURATION SECTION ============== //
@@ -45,21 +50,45 @@ const config = {
         
         // New timeline configuration for banner visibility
         bannerSchedule: {
-            enabled: false,
-            startDate: '2023-01-01',
-            endDate: '2023-12-31',
-            startTime: '00:00',
-            endTime: '23:59',
-            daysOfWeek: [1,2,3,4,5],
-            durationDays: 365,
-            durationMinutes: 2
+            enabled: false, // Set to true to enable scheduling
+            startDate: '2023-01-01', // Start date (YYYY-MM-DD)
+            endDate: '2023-12-31',   // End date (YYYY-MM-DD)
+            startTime: '00:00',      // Start time (24-hour format)
+            endTime: '23:59',        // End time (24-hour format)
+            daysOfWeek: [1,2,3,4,5], // 0=Sunday, 1=Monday, etc.
+            durationDays: 365,       // Alternative: show banner for X days from first visit
+            durationMinutes: 2       // Alternative: show banner for X minutes per session
+        }
+    },
+    
+    // Consent Mode Configuration
+    consentMode: {
+        google: {
+            enabled: true,
+            defaultState: {
+                ad_storage: 'denied',
+                analytics_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+                personalization_storage: 'denied',
+                functionality_storage: 'denied',
+                security_storage: 'granted'
+            }
+        },
+        microsoft: {
+            enabled: true,
+            defaultState: {
+                asc: 'D', // Default denied state
+                src: 'default',
+                evt: 'consent'
+            }
         }
     },
     
     // Language configuration
     languageConfig: {
         defaultLanguage: 'en',
-        availableLanguages: ['en', 'fr'],
+        availableLanguages: [], // Only en and fr will be used as requested
         showLanguageSelector: true,
         autoDetectLanguage: true
     },
@@ -85,30 +114,6 @@ const config = {
         trackPageViews: true,
         trackEvents: true,
         trackConsentChanges: true
-    },
-    
-    // Google Consent Mode configuration
-    googleConsentMode: {
-        enabled: true,
-        defaultConsentState: {
-            ad_storage: 'denied',
-            analytics_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            personalization_storage: 'denied',
-            functionality_storage: 'denied',
-            security_storage: 'granted'
-        }
-    },
-    
-    // Microsoft UET configuration
-    microsoftUET: {
-        enabled: true,
-        configId: '137027166', // Default UET config ID
-        defaultConsentState: {
-            asc: 'D', // Default to denied
-            scr: 'default'
-        }
     },
     
     // UI Theme selection
@@ -315,19 +320,55 @@ const config = {
 window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 
-// Set default consent for Google Consent Mode v2
-if (config.googleConsentMode.enabled) {
-    gtag('consent', 'default', config.googleConsentMode.defaultConsentState);
+// Initialize Microsoft UET
+window.uetq = window.uetq || [];
+window.uetq.push('setConsentGiven', false); // Initialize with no consent
+
+// Set default consent states
+function initializeConsentModes() {
+    // Google Consent Mode default state
+    if (config.consentMode.google.enabled) {
+        gtag('consent', 'default', config.consentMode.google.defaultState);
+    }
+    
+    // Microsoft UET default state
+    if (config.consentMode.microsoft.enabled) {
+        // Push default UET consent state
+        window.uetq.push('setConsentGiven', false);
+        
+        // Send initial consent event with default state
+        sendMicrosoftUETConsentEvent(
+            config.consentMode.microsoft.defaultState.asc,
+            config.consentMode.microsoft.defaultState.src,
+            config.consentMode.microsoft.defaultState.evt
+        );
+    }
 }
 
-// Initialize Microsoft UET if enabled
-if (config.microsoftUET.enabled) {
-    window.uetq = window.uetq || [];
-    window.uetq.push('consent', config.microsoftUET.defaultConsentState);
+// Send Microsoft UET consent event
+function sendMicrosoftUETConsentEvent(asc, src, evt) {
+    if (!config.consentMode.microsoft.enabled) return;
+    
+    // Create the UET consent event
+    const consentEvent = {
+        'asc': asc, // 'D' for denied, 'G' for granted
+        'src': src, // 'default' for initial state, 'update' for changes
+        'evt': evt // 'consent' for consent events, 'pageLoad' for page events
+    };
+    
+    // Push to UET queue
+    window.uetq.push(consentEvent);
+    
+    // Also store in dataLayer for reference
+    window.dataLayer.push({
+        'event': 'microsoft_uet_consent',
+        'microsoft_uet_consent': consentEvent
+    });
 }
 
 // Enhanced cookie database with detailed descriptions
 const cookieDatabase = {
+    // Existing cookies
     '_gcl': { category: 'advertising', duration: '90 days', description: 'Google Click Identifier - Tracks ad clicks and conversions' },
     '_gcl_au': { category: 'advertising', duration: '90 days', description: 'Google Ads conversion tracking' },
     'gclid': { category: 'advertising', duration: '30 days', description: 'Google Click ID - Tracks PPC ad clicks' },
@@ -378,7 +419,34 @@ const cookieDatabase = {
     '_gid': { category: 'analytics', duration: '1 day', description: 'Google Analytics' },
     '_gat': { category: 'analytics', duration: '1 minute', description: 'Google Analytics throttle' },
     'PHPSESSID': { category: 'functional', duration: 'Session', description: 'PHP session' },
-    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' }
+    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' },
+
+    // New Facebook cookies from your list
+    'lu': { category: 'advertising', duration: '2 years', description: 'Used to record whether the person chose to remain logged in (User ID and miscellaneous log in information)' },
+    'xs': { category: 'advertising', duration: '90 days', description: 'Used with c_user cookie to authenticate identity to Facebook (Session ID, creation time, authentication value)' },
+    'c_user': { category: 'advertising', duration: '90 days', description: 'Used with xs cookie to authenticate identity to Facebook (User ID)' },
+    'm_user': { category: 'advertising', duration: '90 days', description: 'Used to authenticate identity on Facebook mobile website (Email, User ID, authentication value)' },
+    'pl': { category: 'advertising', duration: '90 days', description: 'Records that a device or browser logged in via Facebook platform' },
+    'dbln': { category: 'advertising', duration: '2 years', description: 'Used to enable device-based logins (Login authentication values)' },
+    'aks': { category: 'advertising', duration: '30 days', description: 'Determines login state of a person visiting accountkit.com (Account kit access token)' },
+    'aksb': { category: 'advertising', duration: '30 minutes', description: 'Authenticates logins using Account Kit (Request time value)' },
+    'sfau': { category: 'advertising', duration: '1 day', description: 'Optimizes recovery flow after failed login attempts (Encrypted user ID, contact point, time stamp)' },
+    'ick': { category: 'advertising', duration: '2 years', description: 'Stores an encryption key used to encrypt cookies' },
+    'csm': { category: 'advertising', duration: '90 days', description: 'Insecure indicator' },
+    's': { category: 'advertising', duration: '90 days', description: 'Facebook browser identification, authentication, marketing cookies' },
+    'sb': { category: 'advertising', duration: '2 years', description: 'Facebook browser identification, authentication, marketing cookies' },
+    '_fbc': { category: 'advertising', duration: '2 years', description: 'Used for Facebook advertising products like real time bidding' },
+    'oo': { category: 'advertising', duration: '5 years', description: 'Ad opt-out cookie' },
+    'ddid': { category: 'advertising', duration: '28 days', description: 'Used to open specific location in advertiser app upon installation' },
+    'locale': { category: 'advertising', duration: '7 days', description: 'Contains display locale of last logged in user' },
+    'js_ver': { category: 'advertising', duration: '7 days', description: 'Records age of Facebook javascript files' },
+    'rc': { category: 'advertising', duration: '7 days', description: 'Used to optimize site performance for advertisers' },
+    'campaign_click_url': { category: 'advertising', duration: '30 days', description: 'Records Facebook URL landed on after clicking an ad' },
+    'usida': { category: 'advertising', duration: 'Session', description: 'Collects browser and unique identifier for targeted advertising' },
+    
+    // Facebook functional cookies
+    'wd': { category: 'functional', duration: 'Session', description: 'Stores browser window dimensions for page rendering optimization' },
+    'presence': { category: 'functional', duration: 'Session', description: 'Contains user chat state' }
 };
 
 // Language translations (keeping only en and fr as requested)
@@ -451,6 +519,70 @@ const translations = {
         dashboardTitle: "Tableau de bord des analyses de consentement",
         seeAnalytics: "Voir les analyses de consentement"
     }
+};
+
+// Country to language mapping for auto-translation (keeping all mappings)
+const countryLanguageMap = {
+    // EU Countries
+    'AT': 'de',     // Austria
+    'BE': 'nl',     // Belgium (Dutch)
+    'BE': 'fr',     // Belgium (French)
+    'BG': 'bg',     // Bulgaria
+    'HR': 'hr',     // Croatia
+    'CY': 'el',     // Cyprus
+    'CZ': 'cs',     // Czech Republic
+    'DK': 'da',     // Denmark
+    'EE': 'et',     // Estonia
+    'FI': 'fi',     // Finland
+    'FR': 'fr',     // France
+    'DE': 'de',     // Germany
+    'GR': 'el',     // Greece
+    'HU': 'hu',     // Hungary
+    'IE': 'en',     // Ireland
+    'IT': 'it',     // Italy
+    'LV': 'lv',     // Latvia
+    'LT': 'lt',     // Lithuania
+    'LU': 'fr',     // Luxembourg
+    'LU': 'de',     // Luxembourg
+    'MT': 'mt',     // Malta
+    'NL': 'nl',     // Netherlands
+    'PL': 'pl',     // Poland
+    'PT': 'pt',     // Portugal
+    'RO': 'ro',     // Romania
+    'SK': 'sk',     // Slovakia
+    'SI': 'sl',     // Slovenia
+    'ES': 'es',     // Spain
+    'SE': 'sv',     // Sweden
+    
+    // Other European countries
+    'AL': 'en',     // Albania
+    'BA': 'en',     // Bosnia and Herzegovina
+    'IS': 'en',     // Iceland
+    'LI': 'de',     // Liechtenstein
+    'MK': 'en',     // North Macedonia
+    'NO': 'en',     // Norway
+    'RS': 'en',     // Serbia
+    'CH': 'de',     // Switzerland
+    'CH': 'fr',     // Switzerland
+    'CH': 'it',     // Switzerland
+    'UA': 'uk',     // Ukraine
+    'GB': 'en',     // United Kingdom
+    
+    // Rest of the world
+    'US': 'en',     // United States
+    'CA': 'en',     // Canada
+    'CA': 'fr',     // Canada (French)
+    'AU': 'en',     // Australia
+    'NZ': 'en',     // New Zealand
+    'ZA': 'en',     // South Africa
+    'IN': 'en',     // India
+    'CN': 'zh',     // China
+    'JP': 'ja',     // Japan
+    'KR': 'ko',     // South Korea
+    'BR': 'pt',     // Brazil
+    'MX': 'es',     // Mexico
+    'AR': 'es',     // Argentina
+    'RU': 'ru'      // Russia
 };
 
 // Analytics data storage
@@ -1112,12 +1244,12 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         color: ${config.bannerStyle.linkHoverColor};
     }
 
-    .cookie-consent-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-top: 8px;
-    }
+.cookie-consent-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
 
     .cookie-btn {
         padding: ${config.buttonStyle.padding};
@@ -1711,7 +1843,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
 
     .stat-card {
         background-color: ${config.dashboardStyle.statCards.background};
-        border-radius: ${config.dashboardStyle.statCards.borderRadius};
+                border-radius: ${config.dashboardStyle.statCards.borderRadius};
         padding: 15px;
         text-align: center;
         transition: all 0.3s ease;
@@ -1887,14 +2019,14 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    @media (min-width: 768px) {
-        .cookie-consent-buttons {
-            flex-direction: row;
-        }
-        .cookie-btn {
-            flex: 1;
-        }
+@media (min-width: 768px) {
+    .cookie-consent-buttons {
+        flex-direction: row;
     }
+    .cookie-btn {
+        flex: 1;
+    }
+}
     @media (max-width: 768px) {
         .cookie-consent-banner {
             width: 90%;
@@ -2509,36 +2641,53 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 function updateConsentMode(consentData) {
-    // Update Google Consent Mode v2
-    if (config.googleConsentMode.enabled) {
-        const consentStates = {
-            'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
-            'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
-            'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
-            'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
-            'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
-            'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
-            'security_storage': 'granted'
-        };
-        
+    const consentStates = {
+        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
+        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
+        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
+        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
+        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
+        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
+        'security_storage': 'granted'
+    };
+
+    // Determine GCS signal based on consent status and categories
+    let gcsSignal = 'G100'; // Default to all denied
+    
+    if (consentData.status === 'accepted') {
+        gcsSignal = 'G111'; // All granted
+    } else if (consentData.status === 'custom') {
+        if (consentData.categories.analytics && !consentData.categories.advertising) {
+            gcsSignal = 'G101'; // Analytics granted, ads denied
+        } else if (consentData.categories.advertising && !consentData.categories.analytics) {
+            gcsSignal = 'G110'; // Ads granted, analytics denied
+        } else if (consentData.categories.analytics && consentData.categories.advertising) {
+            gcsSignal = 'G111'; // Both granted (same as accept all)
+        } else {
+            gcsSignal = 'G100'; // Both denied (same as reject all)
+        }
+    }
+
+    // Update Google Consent Mode
+    if (config.consentMode.google.enabled) {
         gtag('consent', 'update', consentStates);
     }
     
     // Update Microsoft UET Consent Mode
-    if (config.microsoftUET.enabled) {
-        const uetConsent = {
-            'asc': consentData.categories.advertising ? 'G' : 'D',
-            'scr': 'update',
-            'evt': 'consent'
-        };
+    if (config.consentMode.microsoft.enabled) {
+        // Set the consent state in UET
+        window.uetq.push('setConsentGiven', consentData.categories.advertising);
         
-        window.uetq = window.uetq || [];
-        window.uetq.push('consent', uetConsent);
+        // Send consent update event
+        const ascValue = consentData.categories.advertising ? 'G' : 'D';
+        sendMicrosoftUETConsentEvent(ascValue, 'update', 'consent');
     }
     
-    // Push to dataLayer for analytics
+    // Push to dataLayer for tracking
     window.dataLayer.push({
         'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': gcsSignal,
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
@@ -2604,6 +2753,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // Initialize consent modes
+    initializeConsentModes();
+    
     // Load analytics data
     if (config.analytics.enabled) {
         loadAnalyticsData();
@@ -2613,70 +2765,4 @@ document.addEventListener('DOMContentLoaded', function() {
     let geoData = {};
     if (window.dataLayer && window.dataLayer.length > 0) {
         const geoItem = window.dataLayer.find(item => item.country || item.region || item.city);
-        if (geoItem) {
-            geoData = {
-                country: geoItem.country || '',
-                region: geoItem.region || '',
-                city: geoItem.city || '',
-                language: geoItem.language || ''
-            };
-        }
-    }
-    
-    // Check geo-targeting restrictions
-    if (!checkGeoTargeting(geoData)) {
-        console.log('Cookie consent banner disabled for this location');
-        return;
-    }
-    
-    // Detect language
-    const detectedLanguage = detectUserLanguage(geoData);
-    
-    const detectedCookies = scanAndCategorizeCookies();
-    if (detectedCookies.uncategorized.length > 0) {
-        console.log('Uncategorized cookies found:', detectedCookies.uncategorized);
-    }
-    
-    injectConsentHTML(detectedCookies, detectedLanguage);
-    initializeCookieConsent(detectedCookies, detectedLanguage);
-    
-    if (getCookie('cookie_consent')) {
-        showFloatingButton();
-    }
-    
-    // Enhanced periodic cookie scan with validation
-    setInterval(() => {
-        const newCookies = scanAndCategorizeCookies();
-        if (JSON.stringify(newCookies) !== JSON.stringify(detectedCookies)) {
-            updateCookieTables(newCookies);
-        }
-    }, 10000);
-    
-    // Handle scroll-based acceptance
-    if (config.behavior.acceptOnScroll) {
-        window.addEventListener('scroll', handleScrollAcceptance);
-    }
-});
-
-// Handle scroll-based acceptance
-function updateCookieTables(detectedCookies) {
-    const categories = ['functional', 'analytics', 'performance', 'advertising', 'uncategorized'];
-    
-    categories.forEach(category => {
-        const container = document.querySelector(`input[data-category="${category}"]`)?.closest('.cookie-category');
-        if (container) {
-            const content = container.querySelector('.cookie-details-content');
-            if (content) {
-                content.innerHTML = detectedCookies[category].length > 0 ? 
-                    generateCookieTable(detectedCookies[category]) : 
-                    '<p class="no-cookies-message">No cookies in this category detected.</p>';
-                
-                // Force open the category if new cookies are detected
-                if (detectedCookies[category].length > 0) {
-                    content.style.display = 'block';
-                    container.querySelector('.toggle-details').textContent = '−';
-                }
-            }
-        }
-    });
-}
+       
