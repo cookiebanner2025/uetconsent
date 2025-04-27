@@ -2,11 +2,9 @@
  * Ultimate GDPR Cookie Consent Solution v4.5 - Advanced Edition
  * - Full support for Google Consent Mode v2
  * - Full support for Microsoft UET Consent Mode
- * - Organized configuration with separate styling controls
- * - Complete admin dashboard with password protection
  * - Enhanced analytics tracking
  * - Multi-language support
- * - Mobile-friendly cookie details display
+ * - Mobile-friendly interface
  */
 
 // ============== CONFIGURATION SECTION ============== //
@@ -43,13 +41,25 @@ const config = {
             easing: 'ease-in-out',
             enterEffect: 'fadeIn',
             exitEffect: 'fadeOut'
+        },
+        
+        // New timeline configuration for banner visibility
+        bannerSchedule: {
+            enabled: false,
+            startDate: '2023-01-01',
+            endDate: '2023-12-31',
+            startTime: '00:00',
+            endTime: '23:59',
+            daysOfWeek: [1,2,3,4,5],
+            durationDays: 365,
+            durationMinutes: 2
         }
     },
     
     // Language configuration
     languageConfig: {
         defaultLanguage: 'en',
-        availableLanguages: ['en', 'fr'], // Only en and fr as requested
+        availableLanguages: ['en', 'fr'],
         showLanguageSelector: true,
         autoDetectLanguage: true
     },
@@ -77,14 +87,7 @@ const config = {
         trackConsentChanges: true
     },
     
-    // Microsoft UET Configuration
-    microsoftUET: {
-        enabled: true,
-        configId: '137027166', // Example UET config ID
-        autoLoad: false // Set to true if you want to auto-load UET when consent is given
-    },
-    
-    // Google Consent Mode Configuration
+    // Google Consent Mode configuration
     googleConsentMode: {
         enabled: true,
         defaultConsentState: {
@@ -95,6 +98,16 @@ const config = {
             personalization_storage: 'denied',
             functionality_storage: 'denied',
             security_storage: 'granted'
+        }
+    },
+    
+    // Microsoft UET configuration
+    microsoftUET: {
+        enabled: true,
+        configId: '137027166', // Default UET config ID
+        defaultConsentState: {
+            asc: 'D', // Default to denied
+            scr: 'default'
         }
     },
     
@@ -302,9 +315,15 @@ const config = {
 window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 
-// Set default consent (deny all except security)
+// Set default consent for Google Consent Mode v2
 if (config.googleConsentMode.enabled) {
     gtag('consent', 'default', config.googleConsentMode.defaultConsentState);
+}
+
+// Initialize Microsoft UET if enabled
+if (config.microsoftUET.enabled) {
+    window.uetq = window.uetq || [];
+    window.uetq.push('consent', config.microsoftUET.defaultConsentState);
 }
 
 // Enhanced cookie database with detailed descriptions
@@ -446,6 +465,10 @@ let consentAnalytics = {
 
 // Password protection for analytics
 let isDashboardAuthenticated = false;
+
+// Banner scheduling variables
+let bannerTimer = null;
+let bannerShown = false;
 
 // Load analytics data from localStorage
 function loadAnalyticsData() {
@@ -667,6 +690,43 @@ function isDomainAllowed() {
         }
         return currentDomain === domain;
     });
+}
+
+// Check geo-targeting restrictions
+function checkGeoTargeting(geoData) {
+    // Check blocked locations first
+    if (config.geoConfig.blockedCountries.length > 0 && 
+        config.geoConfig.blockedCountries.includes(geoData.country)) {
+        return false;
+    }
+    
+    if (config.geoConfig.blockedRegions.length > 0 && 
+        config.geoConfig.blockedRegions.includes(geoData.region)) {
+        return false;
+    }
+    
+    if (config.geoConfig.blockedCities.length > 0 && 
+        config.geoConfig.blockedCities.includes(geoData.city)) {
+        return false;
+    }
+    
+    // Check allowed locations (if any restrictions are set)
+    if (config.geoConfig.allowedCountries.length > 0 && 
+        !config.geoConfig.allowedCountries.includes(geoData.country)) {
+        return false;
+    }
+    
+    if (config.geoConfig.allowedRegions.length > 0 && 
+        !config.geoConfig.allowedRegions.includes(geoData.region)) {
+        return false;
+    }
+    
+    if (config.geoConfig.allowedCities.length > 0 && 
+        !config.geoConfig.allowedCities.includes(geoData.city)) {
+        return false;
+    }
+    
+    return true;
 }
 
 // Detect user language based on country and browser settings
@@ -1827,7 +1887,6 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    
     @media (min-width: 768px) {
         .cookie-consent-buttons {
             flex-direction: row;
@@ -1836,7 +1895,6 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             flex: 1;
         }
     }
-    
     @media (max-width: 768px) {
         .cookie-consent-banner {
             width: 90%;
@@ -1973,11 +2031,80 @@ function injectConsentHTML(detectedCookies, language = 'en') {
     document.body.insertAdjacentHTML('beforeend', html);
 }
 
+// Check if banner should be shown based on schedule
+function shouldShowBanner() {
+    if (!config.behavior.bannerSchedule.enabled) {
+        return true;
+    }
+
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+    // Check if we're using duration-based settings
+    if (config.behavior.bannerSchedule.durationDays) {
+        const firstVisit = getCookie('first_visit_date');
+        if (!firstVisit) {
+            setCookie('first_visit_date', currentDate, config.behavior.bannerSchedule.durationDays);
+            return true;
+        }
+        
+        const firstVisitDate = new Date(firstVisit);
+        const endDate = new Date(firstVisitDate);
+        endDate.setDate(endDate.getDate() + config.behavior.bannerSchedule.durationDays);
+        
+        return now <= endDate;
+    }
+
+    if (config.behavior.bannerSchedule.durationMinutes) {
+        const sessionStart = getCookie('session_start_time');
+        if (!sessionStart) {
+            setCookie('session_start_time', now.getTime().toString(), 0.5); // Expires in 30 minutes
+            return true;
+        }
+        
+        const sessionStartTime = parseInt(sessionStart);
+        const endTime = sessionStartTime + (config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
+        
+        return now.getTime() <= endTime;
+    }
+
+    // Check date range
+    const startDate = new Date(config.behavior.bannerSchedule.startDate);
+    const endDate = new Date(config.behavior.bannerSchedule.endDate);
+    
+    if (now < startDate || now > endDate) {
+        return false;
+    }
+
+    // Check time range
+    const startTime = parseInt(config.behavior.bannerSchedule.startTime.split(':')[0]) * 100 + 
+                      parseInt(config.behavior.bannerSchedule.startTime.split(':')[1]);
+    const endTime = parseInt(config.behavior.bannerSchedule.endTime.split(':')[0]) * 100 + 
+                    parseInt(config.behavior.bannerSchedule.endTime.split(':')[1]);
+
+    if (currentTime < startTime || currentTime > endTime) {
+        return false;
+    }
+
+    // Check days of week
+    if (config.behavior.bannerSchedule.daysOfWeek.length > 0 && 
+        !config.behavior.bannerSchedule.daysOfWeek.includes(currentDay)) {
+        return false;
+    }
+
+    return true;
+}
+
 // Main initialization function
 function initializeCookieConsent(detectedCookies, language) {
     const consentGiven = getCookie('cookie_consent');
     
-    if (!consentGiven && config.behavior.autoShow) {
+    // Check if banner should be shown based on schedule
+    const bannerShouldBeShown = shouldShowBanner();
+    
+    if (!consentGiven && config.behavior.autoShow && bannerShouldBeShown) {
         setTimeout(() => {
             showCookieBanner();
         }, config.behavior.bannerDelay * 1000);
@@ -2061,6 +2188,20 @@ function initializeCookieConsent(detectedCookies, language) {
             e.preventDefault();
             showAnalyticsDashboard();
         });
+    }
+    
+    // Setup timer for durationMinutes if enabled
+    if (config.behavior.bannerSchedule.enabled && config.behavior.bannerSchedule.durationMinutes) {
+        // Clear any existing timer
+        if (bannerTimer) {
+            clearTimeout(bannerTimer);
+        }
+        
+        bannerTimer = setTimeout(() => {
+            if (!getCookie('cookie_consent')) {
+                hideCookieBanner();
+            }
+        }, config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
     }
 }
 
@@ -2163,6 +2304,7 @@ function showCookieBanner() {
     setTimeout(() => {
         banner.classList.add('show');
     }, 10);
+    bannerShown = true;
 }
 
 function hideCookieBanner() {
@@ -2171,6 +2313,7 @@ function hideCookieBanner() {
     setTimeout(() => {
         banner.style.display = 'none';
     }, 400);
+    bannerShown = false;
 }
 
 function showCookieSettings() {
@@ -2366,70 +2509,40 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 function updateConsentMode(consentData) {
-    const consentStates = {
-        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
-        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
-        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
-        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
-        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
-        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
-        'security_storage': 'granted'
-    };
-
-    // Update Google Consent Mode
+    // Update Google Consent Mode v2
     if (config.googleConsentMode.enabled) {
+        const consentStates = {
+            'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
+            'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
+            'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
+            'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
+            'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
+            'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
+            'security_storage': 'granted'
+        };
+        
         gtag('consent', 'update', consentStates);
     }
     
-    // Update Microsoft UET consent
+    // Update Microsoft UET Consent Mode
     if (config.microsoftUET.enabled) {
-        updateMicrosoftUETConsent(consentData);
+        const uetConsent = {
+            'asc': consentData.categories.advertising ? 'G' : 'D',
+            'scr': 'update',
+            'evt': 'consent'
+        };
+        
+        window.uetq = window.uetq || [];
+        window.uetq.push('consent', uetConsent);
     }
     
-    // Push to dataLayer for tracking
+    // Push to dataLayer for analytics
     window.dataLayer.push({
         'event': 'cookie_consent_update',
-        'consent_mode': consentStates,
-        'gcs': consentData.gcs || '',
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
     });
-}
-
-// Microsoft UET consent update function
-function updateMicrosoftUETConsent(consentData) {
-    if (!window.uetq) return;
-    
-    // Determine the consent state for Microsoft UET
-    const uetConsent = consentData.categories.advertising ? 'G' : 'D';
-    
-    // Push the consent update to UET
-    window.uetq = window.uetq || [];
-    window.uetq.push({
-        'consent': uetConsent,
-        'configId': config.microsoftUET.configId,
-        'src': consentData.status === 'accepted' ? 'update' : 'default',
-        'evt': 'consent'
-    });
-    
-    // If consent is granted and autoLoad is enabled, load the UET tag
-    if (consentData.categories.advertising && config.microsoftUET.autoLoad) {
-        loadMicrosoftUET();
-    }
-}
-
-// Load Microsoft UET tag
-function loadMicrosoftUET() {
-    if (window.uetq && !window.uetq.loaded) {
-        (function(w,d,t,r,u){
-            w[u]=w[u]||[];w[u].push({'uetq.ready':function(){
-                if(w.uetq)w.uetq.call(d,t,r,u)}});
-            var s=d.createElement(t);s.src=r;s.async=1;
-            var f=d.getElementsByTagName(t)[0];f.parentNode.insertBefore(s,f);
-        })(window,document,'script','//bat.bing.com/bat.js','uetq');
-        window.uetq.loaded = true;
-    }
 }
 
 // Cookie management functions
@@ -2510,6 +2623,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Check geo-targeting restrictions
+    if (!checkGeoTargeting(geoData)) {
+        console.log('Cookie consent banner disabled for this location');
+        return;
+    }
+    
     // Detect language
     const detectedLanguage = detectUserLanguage(geoData);
     
@@ -2532,6 +2651,11 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCookieTables(newCookies);
         }
     }, 10000);
+    
+    // Handle scroll-based acceptance
+    if (config.behavior.acceptOnScroll) {
+        window.addEventListener('scroll', handleScrollAcceptance);
+    }
 });
 
 // Handle scroll-based acceptance
