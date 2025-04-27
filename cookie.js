@@ -1666,27 +1666,587 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         border: ${config.floatingButtonStyle.border};
     }
 
- // Update cookie tables when new cookies are detected
-function updateCookieTables(cookies) {
-    const lang = document.getElementById('cookieLanguageSelect') ? 
-        document.getElementById('cookieLanguageSelect').value : 'en';
-    
-    // Update settings modal
-    const settingsModal = document.getElementById('cookieSettingsModal');
-    if (settingsModal && settingsModal.style.display !== 'none') {
-        document.querySelector('.cookie-settings-body').innerHTML = generateSettingsContent(cookies, lang);
-        setupCookieDetailToggles();
+      .cookie-settings-button.show {
+        opacity: 1;
+        transform: translateY(0);
     }
-    
-    // Update analytics dashboard
-    const analyticsModal = document.getElementById('cookieAnalyticsModal');
-    if (analyticsModal && analyticsModal.style.display !== 'none' && isDashboardAuthenticated) {
-        document.querySelector('.cookie-analytics-body').innerHTML = generateAnalyticsDashboard(lang);
+
+    .cookie-settings-button:hover {
+        background-color: ${config.floatingButtonStyle.hover.background};
+        transform: ${config.floatingButtonStyle.hover.transform};
+        box-shadow: ${config.floatingButtonStyle.hover.boxShadow};
+    }
+
+    #cookieFloatingButton.cookie-settings-button svg,
+    #cookieFloatingButton.cookie-settings-button svg path {
+        width: 40px;
+        height: 40px;
+        fill: ${config.floatingButtonStyle.iconColor} !important;
+        stroke: none;
+        transition: transform 0.3s ease;
+        margin-top: 0px; 
+    }
+    .cookie-settings-button:hover svg {
+        transform: rotate(15deg);
+    }
+
+    /* Admin Button */
+    .cookie-admin-button {
+        position: fixed;
+        ${config.behavior.adminButtonPosition === 'left' ? 
+          'left: 30px; bottom: 100px;' : 
+          'right: 30px; bottom: 100px;'}
+        width: ${config.adminButtonStyle.size};
+        height: ${config.adminButtonStyle.size};
+        background-color: ${config.adminButtonStyle.background};
+        border-radius: ${config.adminButtonStyle.borderRadius};
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: ${config.adminButtonStyle.boxShadow};
+        z-index: 9997;
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateY(20px);
+        border: ${config.adminButtonStyle.border};
+    }
+
+    .cookie-admin-button.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .cookie-admin-button:hover {
+        background-color: ${config.adminButtonStyle.hover.background};
+        transform: ${config.adminButtonStyle.hover.transform};
+        box-shadow: ${config.adminButtonStyle.hover.boxShadow};
+    }
+
+    .cookie-admin-button svg {
+        width: 28px;
+        height: 28px;
+        fill: ${config.adminButtonStyle.iconColor};
+        transition: transform 0.3s ease;
+    }
+
+    .cookie-admin-button:hover svg {
+        transform: rotate(15deg);
+    }
+
+    /* Analytics Dashboard */
+    .cookie-analytics-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 10001;
+        overflow-y: auto;
+        padding: 30px 0;
+        opacity: 0;
+        transition: opacity ${config.behavior.dashboardAnimation.duration}s ${config.behavior.dashboardAnimation.easing};
+    }
+
+    .cookie-analytics-modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 1;
+    }
+
+    .cookie-analytics-content {
+        background-color: ${config.dashboardStyle.background};
+        margin: 0 auto;
+        width: ${config.dashboardStyle.width};
+        max-height: ${config.dashboardStyle.maxHeight};
+        border-radius: ${config.dashboardStyle.borderRadius};
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        transform: translateY(20px);
+        transition: transform ${config.behavior.dashboardAnimation.duration}s ${config.behavior.dashboardAnimation.easing};
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cookie-analytics-modal.show .cookie-analytics-content {
+        transform: translateY(0);
+    }
+
+    .cookie-analytics-header {
+        padding: 20px 30px;
+        border-bottom: 1px solid #ecf0f1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: ${config.dashboardStyle.header.background};
+    }
+
+    .cookie-analytics-header h2 {
+        margin: 0;
+        color: ${config.dashboardStyle.header.textColor};
+        font-size: ${config.dashboardStyle.header.fontSize};
+        font-weight: ${config.dashboardStyle.header.fontWeight};
+    }
+
+    .close-analytics-modal {
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: ${config.modalStyle.closeButton.color};
+        background: none;
+        border: none;
+        padding: 0 10px;
+        transition: color 0.2s ease;
+    }
+
+    .close-analytics-modal:hover {
+        color: ${config.modalStyle.closeButton.hoverColor};
+    }
+
+    .cookie-analytics-body {
+        padding: 25px 30px;
+        background-color: ${config.dashboardStyle.body.background};
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    /* Stats Dashboard */
+    .analytics-dashboard {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .analytics-dashboard h3 {
+        color: ${config.bannerStyle.title.color};
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background-color: ${config.dashboardStyle.statCards.background};
+        border-radius: ${config.dashboardStyle.statCards.borderRadius};
+        padding: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-card.accepted {
+        border-top: 4px solid ${config.dashboardStyle.statCards.acceptedColor};
+    }
+
+    .stat-card.rejected {
+        border-top: 4px solid ${config.dashboardStyle.statCards.rejectedColor};
+    }
+
+    .stat-card.custom {
+        border-top: 4px solid ${config.dashboardStyle.statCards.customColor};
+    }
+
+    .stat-card.total {
+        border-top: 4px solid ${config.dashboardStyle.statCards.totalColor};
+    }
+
+    .stat-card h4 {
+        margin: 0 0 10px 0;
+        font-size: 1rem;
+        color: ${config.bannerStyle.description.color};
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: ${config.bannerStyle.title.color};
+        margin-bottom: 5px;
+    }
+
+    .stat-percentage {
+        font-size: 1rem;
+        color: ${config.bannerStyle.description.color};
+    }
+
+    .time-based-stats {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .time-stat {
+        background-color: ${config.dashboardStyle.statCards.background};
+        border-radius: ${config.dashboardStyle.statCards.borderRadius};
+        padding: 20px;
+    }
+
+    .time-stat h4 {
+        margin: 0 0 15px 0;
+        font-size: 1.1rem;
+        color: ${config.bannerStyle.title.color};
+    }
+
+    .stat-bars {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stat-bar-container {
+        margin-bottom: 15px;
+    }
+
+    .stat-bar-label {
+        font-size: 0.85rem;
+        color: ${config.bannerStyle.description.color};
+        margin-bottom: 5px;
+    }
+
+    .stat-bar {
+        height: ${config.dashboardStyle.barChart.height};
+        background-color: ${config.dashboardStyle.barChart.background};
+        border-radius: ${config.dashboardStyle.barChart.borderRadius};
+        overflow: hidden;
+        display: flex;
+    }
+
+    .stat-bar-segment {
+        height: 100%;
+    }
+
+    .stat-bar-segment.accepted {
+        background-color: ${config.dashboardStyle.barChart.acceptedColor};
+    }
+
+    .stat-bar-segment.rejected {
+        background-color: ${config.dashboardStyle.barChart.rejectedColor};
+    }
+
+    .stat-bar-segment.custom {
+        background-color: ${config.dashboardStyle.barChart.customColor};
+    }
+
+    .stat-bar-legend {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: ${config.bannerStyle.description.color};
+        margin-top: 5px;
+    }
+
+    /* Footer Buttons */
+    .cookie-settings-footer {
+        padding: 20px 30px;
+        background-color: ${config.modalStyle.footer.background};
+        border-top: ${config.modalStyle.footer.borderTop};
+    }
+
+    /* Password Prompt */
+    .password-prompt {
+        text-align: center;
+        padding: 30px;
+    }
+
+    .password-prompt h3 {
+        color: ${config.bannerStyle.title.color};
+        margin-bottom: 20px;
+    }
+
+    .password-prompt input {
+        padding: 12px 15px;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+        width: 100%;
+        max-width: 300px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .password-prompt button {
+        padding: 12px 25px;
+        background-color: ${config.buttonStyle.accept.background};
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .password-prompt button:hover {
+        background-color: ${config.buttonStyle.accept.hover.background};
+    }
+
+    .error-message {
+        color: ${config.buttonStyle.reject.color};
+        margin-top: 10px;
+        font-size: 14px;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 900px) {
+        .cookie-settings-content {
+            width: 90%;
+            max-height: 80vh;
+        }
+        
+        .cookie-analytics-content {
+            width: 90%;
+            max-height: 80vh;
+        }
+        
+        .stats-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+@media (min-width: 768px) {
+    .cookie-consent-buttons {
+        flex-direction: row;
+    }
+    .cookie-btn {
+        flex: 1;
     }
 }
+    @media (max-width: 768px) {
+        .cookie-consent-banner {
+            width: 90%;
+            ${config.behavior.bannerPosition === 'left' ? 'left: 5%;' : 'right: 5%;'}
+            bottom: 10px;
+            padding: 20px;
+            flex-direction: column;
+        }
+        
+        .cookie-btn {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .cookie-btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .cookie-settings-header {
+            padding: 15px 20px;
+        }
+        
+        .cookie-settings-body {
+            padding: 15px 20px;
+        }
+        
+        .cookie-settings-footer {
+            padding: 15px 20px;
+        }
+        
+        .modal-buttons-container {
+            flex-direction: column;
+        }
+        
+        .modal-buttons-container .cookie-btn {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .modal-buttons-container .cookie-btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .stats-summary {
+            grid-template-columns: 1fr;
+        }
+        
+        /* Mobile cookie details */
+        .cookie-details-table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .cookie-details-table td {
+            white-space: normal;
+        }
+        
+        .cookie-value-cell {
+            min-width: 120px;
+        }
+    }
 
-// Setup cookie detail toggles
-function setupCookieDetailToggles() {
+    @media (max-width: 480px) {
+        .cookie-consent-banner {
+            padding: 15px;
+            flex-direction: column;
+            width: calc(100% - 30px);
+            ${config.behavior.bannerPosition === 'left' ? 'left: 15px;' : 'right: 15px;'}
+        }
+        
+        .cookie-consent-content h2 {
+            font-size: 1.1rem;
+        }
+        
+        .cookie-consent-content p {
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+        
+        .privacy-policy-link {
+            margin-bottom: 15px;
+        }
+        
+        .cookie-btn {
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .cookie-settings-button {
+            width: 50px;
+            height: 50px;
+            bottom: 15px;
+            ${config.behavior.floatingButtonPosition === 'left' ? 'left: 15px;' : 'right: 15px;'}
+        }
+        
+        .cookie-admin-button {
+            width: 50px;
+            height: 50px;
+            ${config.behavior.adminButtonPosition === 'left' ? 
+              'left: 15px; bottom: 80px;' : 
+              'right: 15px; bottom: 80px;'}
+        }
+        
+        .cookie-settings-button svg {
+            width: 22px;
+            height: 22px;
+        }
+        
+        .cookie-admin-button svg {
+            width: 22px;
+            height: 22px;
+        }
+        
+        .cookie-settings-header h2 {
+            font-size: 1.2rem;
+        }
+        
+        .toggle-container h3 {
+            font-size: 1rem;
+        }
+        
+        .cookie-details-table {
+            font-size: 0.8rem;
+        }
+        
+        .cookie-details-table th, 
+        .cookie-details-table td {
+            padding: 8px 10px;
+        }
+    }
+    </style>`;
+    
+    document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// Check if banner should be shown based on schedule
+function shouldShowBanner() {
+    if (!config.behavior.bannerSchedule.enabled) {
+        return true;
+    }
+
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+    // Check if we're using duration-based settings
+    if (config.behavior.bannerSchedule.durationDays) {
+        const firstVisit = getCookie('first_visit_date');
+        if (!firstVisit) {
+            setCookie('first_visit_date', currentDate, config.behavior.bannerSchedule.durationDays);
+            return true;
+        }
+        
+        const firstVisitDate = new Date(firstVisit);
+        const endDate = new Date(firstVisitDate);
+        endDate.setDate(endDate.getDate() + config.behavior.bannerSchedule.durationDays);
+        
+        return now <= endDate;
+    }
+
+    if (config.behavior.bannerSchedule.durationMinutes) {
+        const sessionStart = getCookie('session_start_time');
+        if (!sessionStart) {
+            setCookie('session_start_time', now.getTime().toString(), 0.5); // Expires in 30 minutes
+            return true;
+        }
+        
+        const sessionStartTime = parseInt(sessionStart);
+        const endTime = sessionStartTime + (config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
+        
+        return now.getTime() <= endTime;
+    }
+
+    // Check date range
+    const startDate = new Date(config.behavior.bannerSchedule.startDate);
+    const endDate = new Date(config.behavior.bannerSchedule.endDate);
+    
+    if (now < startDate || now > endDate) {
+        return false;
+    }
+
+    // Check time range
+    const startTime = parseInt(config.behavior.bannerSchedule.startTime.split(':')[0]) * 100 + 
+                      parseInt(config.behavior.bannerSchedule.startTime.split(':')[1]);
+    const endTime = parseInt(config.behavior.bannerSchedule.endTime.split(':')[0]) * 100 + 
+                    parseInt(config.behavior.bannerSchedule.endTime.split(':')[1]);
+
+    if (currentTime < startTime || currentTime > endTime) {
+        return false;
+    }
+
+    // Check days of week
+    if (config.behavior.bannerSchedule.daysOfWeek.length > 0 && 
+        !config.behavior.bannerSchedule.daysOfWeek.includes(currentDay)) {
+        return false;
+    }
+
+    return true;
+}
+
+// Main initialization function
+function initializeCookieConsent(detectedCookies, language) {
+    const consentGiven = getCookie('cookie_consent');
+    
+    // Initialize Microsoft UET Consent Mode
+    initializeUETConsent();
+    
+    // Check if banner should be shown based on schedule
+    const bannerShouldBeShown = shouldShowBanner();
+    
+    if (!consentGiven && config.behavior.autoShow && bannerShouldBeShown) {
+        setTimeout(() => {
+            showCookieBanner();
+        }, config.behavior.bannerDelay * 1000);
+    } else if (consentGiven) {
+        const consentData = JSON.parse(consentGiven);
+        updateConsentMode(consentData);
+        loadCookiesAccordingToConsent(consentData);
+        if (config.behavior.showFloatingButton) {
+            showFloatingButton();
+        }
+    }
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Setup cookie details toggles
     document.querySelectorAll('.cookie-details-header').forEach(header => {
         header.addEventListener('click', function() {
             const content = this.nextElementSibling;
@@ -1700,535 +2260,699 @@ function setupCookieDetailToggles() {
             }
         });
     });
-}
-
-// UET Consent Mode functions
-function initializeUETConsent() {
-    if (typeof window.uetq === 'undefined') {
-        window.uetq = [];
-    }
     
-    // Initialize with default denied state
-    window.uetq.push('consent', {
-        'ad_storage': 'denied',
-        'analytics_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied'
+    // Setup cookie value toggles for mobile
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('toggle-cookie-value')) {
+            const cell = e.target.closest('.cookie-value-cell');
+            const full = cell.querySelector('.cookie-value-full');
+            const truncated = cell.querySelector('.cookie-value-truncated');
+            
+            if (e.target.dataset.state === 'truncated') {
+                full.style.display = 'inline';
+                truncated.style.display = 'none';
+                e.target.textContent = 'Hide full';
+                e.target.dataset.state = 'full';
+            } else {
+                full.style.display = 'none';
+                truncated.style.display = 'inline';
+                e.target.textContent = 'Show full';
+                e.target.dataset.state = 'truncated';
+            }
+        }
     });
-}
-
-function fireUETConsentEvent(action, status) {
-    if (typeof window.uetq !== 'undefined') {
-        window.uetq.push('consent', {
-            'action': action,
-            'status': status
+    
+    // Setup language selector change event
+    const languageSelect = document.getElementById('cookieLanguageSelect');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', function() {
+            changeLanguage(this.value);
         });
     }
-}
-
-// Analytics functions
-function loadAnalyticsData() {
-    if (localStorage.getItem('cookie_consent_stats')) {
-        consentStats = JSON.parse(localStorage.getItem('cookie_consent_stats'));
-    } else {
-        // Initialize with default values
-        consentStats = {
-            total: 0,
-            accepted: 0,
-            rejected: 0,
-            custom: 0,
-            byDay: {},
-            byHour: {},
-            byCountry: {},
-            byDevice: {},
-            byPage: {}
-        };
-        saveAnalyticsData();
-    }
-}
-
-function saveAnalyticsData() {
-    localStorage.setItem('cookie_consent_stats', JSON.stringify(consentStats));
-}
-
-function updateConsentStats(status) {
-    const now = new Date();
-    const dateKey = now.toISOString().split('T')[0];
-    const hourKey = now.getHours();
     
-    // Update basic stats
-    consentStats.total++;
-    consentStats[status]++;
-    
-    // Update time-based stats
-    if (!consentStats.byDay[dateKey]) {
-        consentStats.byDay[dateKey] = { accepted: 0, rejected: 0, custom: 0 };
-    }
-    consentStats.byDay[dateKey][status]++;
-    
-    if (!consentStats.byHour[hourKey]) {
-        consentStats.byHour[hourKey] = { accepted: 0, rejected: 0, custom: 0 };
-    }
-    consentStats.byHour[hourKey][status]++;
-    
-    // Update geo stats if available
-    if (window.dataLayer && window.dataLayer.length > 0) {
-        const geoItem = window.dataLayer.find(item => item.country);
-        if (geoItem) {
-            const country = geoItem.country;
-            if (!consentStats.byCountry[country]) {
-                consentStats.byCountry[country] = { accepted: 0, rejected: 0, custom: 0 };
-            }
-            consentStats.byCountry[country][status]++;
+    // Setup admin button if enabled
+    if (config.analytics.enabled && config.analytics.showDashboard && config.behavior.showAdminButton) {
+        const adminButton = document.getElementById('cookieAdminButton');
+        if (adminButton) {
+            adminButton.addEventListener('click', showAnalyticsDashboard);
+            setTimeout(() => {
+                adminButton.style.display = 'flex';
+                adminButton.classList.add('show');
+            }, 100);
         }
     }
     
-    // Update device stats
-    const deviceType = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
-    if (!consentStats.byDevice[deviceType]) {
-        consentStats.byDevice[deviceType] = { accepted: 0, rejected: 0, custom: 0 };
+    // Setup password prompt events if needed
+    if (config.analytics.passwordProtect && !isDashboardAuthenticated) {
+        setupPasswordPromptEvents();
     }
-    consentStats.byDevice[deviceType][status]++;
     
-    // Update page stats
-    const pagePath = window.location.pathname;
-    if (!consentStats.byPage[pagePath]) {
-        consentStats.byPage[pagePath] = { accepted: 0, rejected: 0, custom: 0 };
-    }
-    consentStats.byPage[pagePath][status]++;
-    
-    saveAnalyticsData();
-}
-
-// Generate analytics dashboard HTML
-function generateAnalyticsDashboard(lang) {
-    const t = translations[lang] || translations.en;
-    
-    // Calculate percentages
-    const acceptedPercent = consentStats.total > 0 ? Math.round((consentStats.accepted / consentStats.total) * 100) : 0;
-    const rejectedPercent = consentStats.total > 0 ? Math.round((consentStats.rejected / consentStats.total) * 100) : 0;
-    const customPercent = consentStats.total > 0 ? Math.round((consentStats.custom / consentStats.total) * 100) : 0;
-    
-    // Prepare time-based data
-    const last7Days = prepareLast7DaysData();
-    const hourlyData = prepareHourlyData();
-    
-    // Prepare geo data
-    const topCountries = prepareTopCountriesData();
-    
-    // Prepare device data
-    const deviceData = prepareDeviceData();
-    
-    // Prepare page data
-    const pageData = preparePageData();
-    
-    return `
-        <div class="analytics-dashboard">
-            <h3>${t.analyticsTitle}</h3>
-            
-            <div class="stats-summary">
-                <div class="stat-card total">
-                    <h4>${t.totalConsents}</h4>
-                    <div class="stat-value">${consentStats.total}</div>
-                </div>
-                <div class="stat-card accepted">
-                    <h4>${t.acceptedAll}</h4>
-                    <div class="stat-value">${consentStats.accepted}</div>
-                    <div class="stat-percentage">${acceptedPercent}%</div>
-                </div>
-                <div class="stat-card rejected">
-                    <h4>${t.rejectedAll}</h4>
-                    <div class="stat-value">${consentStats.rejected}</div>
-                    <div class="stat-percentage">${rejectedPercent}%</div>
-                </div>
-                <div class="stat-card custom">
-                    <h4>${t.customSettings}</h4>
-                    <div class="stat-value">${consentStats.custom}</div>
-                    <div class="stat-percentage">${customPercent}%</div>
-                </div>
-            </div>
-            
-            <div class="time-based-stats">
-                <div class="time-stat">
-                    <h4>${t.consentLast7Days}</h4>
-                    <div class="stat-bars">
-                        ${last7Days.map(day => `
-                            <div class="stat-bar-container">
-                                <div class="stat-bar-label">${day.label}</div>
-                                <div class="stat-bar">
-                                    <div class="stat-bar-segment accepted" style="width: ${day.acceptedPercent}%"></div>
-                                    <div class="stat-bar-segment custom" style="width: ${day.customPercent}%"></div>
-                                    <div class="stat-bar-segment rejected" style="width: ${day.rejectedPercent}%"></div>
-                                </div>
-                                <div class="stat-bar-legend">
-                                    <span>${day.accepted} ${t.accepted}</span>
-                                    <span>${day.custom} ${t.custom}</span>
-                                    <span>${day.rejected} ${t.rejected}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div class="time-stat">
-                    <h4>${t.consentByHour}</h4>
-                    <div class="stat-bars">
-                        ${hourlyData.map(hour => `
-                            <div class="stat-bar-container">
-                                <div class="stat-bar-label">${hour.label}</div>
-                                <div class="stat-bar">
-                                    <div class="stat-bar-segment accepted" style="width: ${hour.acceptedPercent}%"></div>
-                                    <div class="stat-bar-segment custom" style="width: ${hour.customPercent}%"></div>
-                                    <div class="stat-bar-segment rejected" style="width: ${hour.rejectedPercent}%"></div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="time-based-stats">
-                <div class="time-stat">
-                    <h4>${t.consentByCountry}</h4>
-                    <div class="stat-bars">
-                        ${topCountries.map(country => `
-                            <div class="stat-bar-container">
-                                <div class="stat-bar-label">${country.label}</div>
-                                <div class="stat-bar">
-                                    <div class="stat-bar-segment accepted" style="width: ${country.acceptedPercent}%"></div>
-                                    <div class="stat-bar-segment custom" style="width: ${country.customPercent}%"></div>
-                                    <div class="stat-bar-segment rejected" style="width: ${country.rejectedPercent}%"></div>
-                                </div>
-                                <div class="stat-bar-legend">
-                                    <span>${country.total} ${t.total}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div class="time-stat">
-                    <h4>${t.consentByDevice}</h4>
-                    <div class="stat-bars">
-                        ${deviceData.map(device => `
-                            <div class="stat-bar-container">
-                                <div class="stat-bar-label">${device.label}</div>
-                                <div class="stat-bar">
-                                    <div class="stat-bar-segment accepted" style="width: ${device.acceptedPercent}%"></div>
-                                    <div class="stat-bar-segment custom" style="width: ${device.customPercent}%"></div>
-                                    <div class="stat-bar-segment rejected" style="width: ${device.rejectedPercent}%"></div>
-                                </div>
-                                <div class="stat-bar-legend">
-                                    <span>${device.total} ${t.total}</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="time-stat">
-                <h4>${t.consentByPage}</h4>
-                <div class="stat-bars">
-                    ${pageData.slice(0, 5).map(page => `
-                        <div class="stat-bar-container">
-                            <div class="stat-bar-label">${page.label}</div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-segment accepted" style="width: ${page.acceptedPercent}%"></div>
-                                <div class="stat-bar-segment custom" style="width: ${page.customPercent}%"></div>
-                                <div class="stat-bar-segment rejected" style="width: ${page.rejectedPercent}%"></div>
-                            </div>
-                            <div class="stat-bar-legend">
-                                <span>${page.total} ${t.total}</span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// Data preparation functions for analytics
-function prepareLast7DaysData() {
-    const result = [];
-    const today = new Date();
-    
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateKey = date.toISOString().split('T')[0];
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-        
-        const dayData = consentStats.byDay[dateKey] || { accepted: 0, rejected: 0, custom: 0 };
-        const total = dayData.accepted + dayData.rejected + dayData.custom;
-        
-        result.push({
-            label: dayName,
-            accepted: dayData.accepted,
-            rejected: dayData.rejected,
-            custom: dayData.custom,
-            total: total,
-            acceptedPercent: total > 0 ? Math.round((dayData.accepted / total) * 100) : 0,
-            rejectedPercent: total > 0 ? Math.round((dayData.rejected / total) * 100) : 0,
-            customPercent: total > 0 ? Math.round((dayData.custom / total) * 100) : 0
+    // Setup "See Consent Analytics" link in the modal footer
+    const seeAnalyticsLink = document.querySelector('.see-analytics-link');
+    if (seeAnalyticsLink) {
+        seeAnalyticsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAnalyticsDashboard();
         });
     }
     
-    return result;
+    // Setup timer for durationMinutes if enabled
+    if (config.behavior.bannerSchedule.enabled && config.behavior.bannerSchedule.durationMinutes) {
+        // Clear any existing timer
+        if (bannerTimer) {
+            clearTimeout(bannerTimer);
+        }
+        
+        bannerTimer = setTimeout(() => {
+            if (!getCookie('cookie_consent')) {
+                hideCookieBanner();
+            }
+        }, config.behavior.bannerSchedule.durationMinutes * 60 * 1000);
+    }
 }
 
-function prepareHourlyData() {
-    const result = [];
-    
-    for (let hour = 0; hour < 24; hour++) {
-        const hourData = consentStats.byHour[hour] || { accepted: 0, rejected: 0, custom: 0 };
-        const total = hourData.accepted + hourData.rejected + hourData.custom;
-        
-        result.push({
-            label: `${hour}:00`,
-            accepted: hourData.accepted,
-            rejected: hourData.rejected,
-            custom: hourData.custom,
-            total: total,
-            acceptedPercent: total > 0 ? Math.round((hourData.accepted / total) * 100) : 0,
-            rejectedPercent: total > 0 ? Math.round((hourData.rejected / total) * 100) : 0,
-            customPercent: total > 0 ? Math.round((hourData.custom / total) * 100) : 0
+// Setup password prompt events
+function setupPasswordPromptEvents() {
+    const passwordSubmit = document.getElementById('dashboardPasswordSubmit');
+    if (passwordSubmit) {
+        passwordSubmit.addEventListener('click', function() {
+            const passwordInput = document.getElementById('dashboardPasswordInput');
+            const errorMessage = document.getElementById('passwordError');
+            
+            if (passwordInput.value === config.analytics.dashboardPassword) {
+                isDashboardAuthenticated = true;
+                setCookie('dashboard_auth', 'true', config.analytics.passwordCookieDuration);
+                
+                // Update the dashboard content
+                const lang = document.getElementById('cookieLanguageSelect') ? 
+                    document.getElementById('cookieLanguageSelect').value : 'en';
+                document.querySelector('.cookie-analytics-body').innerHTML = generateAnalyticsDashboard(lang);
+            } else {
+                const lang = document.getElementById('cookieLanguageSelect') ? 
+                    document.getElementById('cookieLanguageSelect').value : 'en';
+                errorMessage.textContent = translations[lang].passwordIncorrect;
+            }
         });
     }
-    
-    return result;
 }
 
-function prepareTopCountriesData() {
-    const countries = Object.keys(consentStats.byCountry).map(country => {
-        const countryData = consentStats.byCountry[country];
-        const total = countryData.accepted + countryData.rejected + countryData.custom;
-        
-        return {
-            label: country,
-            accepted: countryData.accepted,
-            rejected: countryData.rejected,
-            custom: countryData.custom,
-            total: total,
-            acceptedPercent: total > 0 ? Math.round((countryData.accepted / total) * 100) : 0,
-            rejectedPercent: total > 0 ? Math.round((countryData.rejected / total) * 100) : 0,
-            customPercent: total > 0 ? Math.round((countryData.custom / total) * 100) : 0
-        };
+// Setup all event listeners
+function setupEventListeners() {
+    document.getElementById('acceptAllBtn').addEventListener('click', function() {
+        acceptAllCookies();
+        hideCookieBanner();
+        if (config.behavior.showFloatingButton) {
+            showFloatingButton();
+        }
     });
     
-    // Sort by total descending and take top 5
-    return countries.sort((a, b) => b.total - a.total).slice(0, 5);
-}
-
-function prepareDeviceData() {
-    const result = [];
-    
-    for (const deviceType in consentStats.byDevice) {
-        const deviceData = consentStats.byDevice[deviceType];
-        const total = deviceData.accepted + deviceData.rejected + deviceData.custom;
-        
-        result.push({
-            label: deviceType === 'mobile' ? 'Mobile' : 'Desktop',
-            accepted: deviceData.accepted,
-            rejected: deviceData.rejected,
-            custom: deviceData.custom,
-            total: total,
-            acceptedPercent: total > 0 ? Math.round((deviceData.accepted / total) * 100) : 0,
-            rejectedPercent: total > 0 ? Math.round((deviceData.rejected / total) * 100) : 0,
-            customPercent: total > 0 ? Math.round((deviceData.custom / total) * 100) : 0
-        });
-    }
-    
-    return result;
-}
-
-function preparePageData() {
-    const pages = Object.keys(consentStats.byPage).map(page => {
-        const pageData = consentStats.byPage[page];
-        const total = pageData.accepted + pageData.rejected + pageData.custom;
-        
-        return {
-            label: page || '/',
-            accepted: pageData.accepted,
-            rejected: pageData.rejected,
-            custom: pageData.custom,
-            total: total,
-            acceptedPercent: total > 0 ? Math.round((pageData.accepted / total) * 100) : 0,
-            rejectedPercent: total > 0 ? Math.round((pageData.rejected / total) * 100) : 0,
-            customPercent: total > 0 ? Math.round((pageData.custom / total) * 100) : 0
-        };
+    document.getElementById('rejectAllBtn').addEventListener('click', function() {
+        rejectAllCookies();
+        hideCookieBanner();
+        if (config.behavior.showFloatingButton) {
+            showFloatingButton();
+        }
     });
     
-    // Sort by total descending
-    return pages.sort((a, b) => b.total - a.total);
+    document.getElementById('adjustConsentBtn').addEventListener('click', function() {
+        showCookieSettings();
+        hideCookieBanner();
+    });
+    
+    document.getElementById('acceptAllSettingsBtn').addEventListener('click', function() {
+        acceptAllCookies();
+        hideCookieSettings();
+        if (config.behavior.showFloatingButton) {
+            showFloatingButton();
+        }
+    });
+    
+    document.getElementById('rejectAllSettingsBtn').addEventListener('click', function() {
+        rejectAllCookies();
+        hideCookieSettings();
+        if (config.behavior.showFloatingButton) {
+            showFloatingButton();
+        }
+    });
+    
+    document.getElementById('saveSettingsBtn').addEventListener('click', function() {
+        saveCustomSettings();
+        hideCookieSettings();
+        if (config.behavior.showFloatingButton) {
+            showFloatingButton();
+        }
+    });
+    
+    document.querySelector('.close-modal').addEventListener('click', function() {
+        hideCookieSettings();
+        if (!getCookie('cookie_consent')) {
+            showCookieBanner();
+        }
+    });
+    
+    document.querySelector('.close-analytics-modal').addEventListener('click', function() {
+        hideAnalyticsDashboard();
+    });
+    
+    document.getElementById('cookieFloatingButton').addEventListener('click', function() {
+        if (!document.getElementById('cookieConsentBanner').classList.contains('show')) {
+            showCookieBanner();
+        } else {
+            hideCookieBanner();
+        }
+    });
 }
 
-// Language functions
-function changeLanguage(lang) {
-    const t = translations[lang];
-    if (!t) return;
-    
-    // Update banner text
+// Show/hide functions with animations
+function showCookieBanner() {
     const banner = document.getElementById('cookieConsentBanner');
-    if (banner) {
-        banner.querySelector('h2').textContent = t.bannerTitle;
-        banner.querySelector('p').textContent = t.bannerDescription;
-        banner.querySelector('.privacy-policy-link a').textContent = t.privacyPolicy;
-        banner.querySelector('#acceptAllBtn').textContent = t.acceptAll;
-        banner.querySelector('#rejectAllBtn').textContent = t.rejectAll;
-        banner.querySelector('#adjustConsentBtn').textContent = t.adjustSettings;
-    }
-    
-    // Update settings modal text
-    const settingsModal = document.getElementById('cookieSettingsModal');
-    if (settingsModal) {
-        settingsModal.querySelector('h2').textContent = t.settingsTitle;
-        settingsModal.querySelector('#acceptAllSettingsBtn').textContent = t.acceptAll;
-        settingsModal.querySelector('#rejectAllSettingsBtn').textContent = t.rejectAll;
-        settingsModal.querySelector('#saveSettingsBtn').textContent = t.saveSettings;
-        
-        // Update category labels
-        document.querySelectorAll('.toggle-label').forEach((label, index) => {
-            const category = label.closest('.cookie-category').dataset.category;
-            label.querySelector('span').textContent = t.categories[category];
-        });
-        
-        // Update cookie details headers
-        document.querySelectorAll('.cookie-details-header h3').forEach(header => {
-            const category = header.closest('.cookie-category').dataset.category;
-            header.textContent = t.categories[category];
-        });
-    }
-    
-    // Update analytics dashboard if open
-    const analyticsModal = document.getElementById('cookieAnalyticsModal');
-    if (analyticsModal && analyticsModal.style.display !== 'none' && isDashboardAuthenticated) {
+    banner.style.display = 'block';
+    setTimeout(() => {
+        banner.classList.add('show');
+    }, 10);
+    bannerShown = true;
+}
+
+function hideCookieBanner() {
+    const banner = document.getElementById('cookieConsentBanner');
+    banner.classList.remove('show');
+    setTimeout(() => {
+        banner.style.display = 'none';
+    }, 400);
+    bannerShown = false;
+}
+
+function showCookieSettings() {
+    const modal = document.getElementById('cookieSettingsModal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+    hideCookieBanner();
+}
+
+function hideCookieSettings() {
+    const modal = document.getElementById('cookieSettingsModal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+function showAnalyticsDashboard() {
+    if (config.analytics.passwordProtect && !isDashboardAuthenticated) {
+        const modal = document.getElementById('cookieAnalyticsModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+    } else {
+        const modal = document.getElementById('cookieAnalyticsModal');
+        const lang = document.getElementById('cookieLanguageSelect') ? 
+            document.getElementById('cookieLanguageSelect').value : 'en';
         document.querySelector('.cookie-analytics-body').innerHTML = generateAnalyticsDashboard(lang);
-    }
-    
-    // Set language cookie
-    setCookie('preferred_language', lang, 365);
-}
-
-// Geo-targeting functions
-function isDomainAllowed() {
-    if (!config.behavior.domainRestrictions.enabled) {
-        return true;
-    }
-    
-    const currentDomain = window.location.hostname;
-    
-    if (config.behavior.domainRestrictions.mode === 'exclude') {
-        return !config.behavior.domainRestrictions.domains.includes(currentDomain);
-    } else {
-        return config.behavior.domainRestrictions.domains.includes(currentDomain);
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
     }
 }
 
-function checkGeoTargeting(geoData) {
-    if (!config.behavior.geoTargeting.enabled) {
-        return true;
-    }
-    
-    const country = geoData.country || '';
-    
-    if (config.behavior.geoTargeting.mode === 'exclude') {
-        return !config.behavior.geoTargeting.countries.includes(country);
-    } else {
-        return config.behavior.geoTargeting.countries.includes(country);
-    }
+function hideAnalyticsDashboard() {
+    const modal = document.getElementById('cookieAnalyticsModal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
 }
 
-function detectUserLanguage(geoData) {
-    // Check for saved language preference
-    const savedLanguage = getCookie('preferred_language');
-    if (savedLanguage && translations[savedLanguage]) {
-        return savedLanguage;
-    }
-    
-    // Check geo data for language
-    if (geoData.language && translations[geoData.language]) {
-        return geoData.language;
-    }
-    
-    // Check browser language
-    const browserLanguage = navigator.language.split('-')[0];
-    if (translations[browserLanguage]) {
-        return browserLanguage;
-    }
-    
-    // Default to English
-    return 'en';
+function showFloatingButton() {
+    const button = document.getElementById('cookieFloatingButton');
+    button.style.display = 'flex';
+    setTimeout(() => {
+        button.classList.add('show');
+    }, 100);
 }
 
-// Cookie scanning and categorization
-function scanAndCategorizeCookies() {
-    const result = {
-        functional: [],
-        analytics: [],
-        performance: [],
-        advertising: [],
-        uncategorized: []
+function hideFloatingButton() {
+    const button = document.getElementById('cookieFloatingButton');
+    button.classList.remove('show');
+    setTimeout(() => {
+        button.style.display = 'none';
+    }, 300);
+}
+
+// Cookie consent functions
+function acceptAllCookies() {
+    const consentData = {
+        status: 'accepted',
+        gcs: 'G111',
+        categories: {
+            functional: true,
+            analytics: true,
+            performance: true,
+            advertising: true,
+            uncategorized: true
+        },
+        timestamp: new Date().getTime()
     };
     
+    setCookie('cookie_consent', JSON.stringify(consentData), 365);
+    updateConsentMode(consentData);
+    loadCookiesAccordingToConsent(consentData);
+    
+    // Fire UET consent update event with granted status
+    fireUETConsentEvent('update', 'G');
+    
+    if (config.analytics.enabled) {
+        updateConsentStats('accepted');
+    }
+}
+
+function rejectAllCookies() {
+    const consentData = {
+        status: 'rejected',
+        gcs: 'G100',
+        categories: {
+            functional: false,
+            analytics: false,
+            performance: false,
+            advertising: false,
+            uncategorized: false
+        },
+        timestamp: new Date().getTime()
+    };
+    
+    setCookie('cookie_consent', JSON.stringify(consentData), 365);
+    updateConsentMode(consentData);
+    clearNonEssentialCookies();
+    
+    // Fire UET consent update event with denied status
+    fireUETConsentEvent('update', 'D');
+    
+    if (config.analytics.enabled) {
+        updateConsentStats('rejected');
+    }
+}
+
+function saveCustomSettings() {
+    const analyticsChecked = document.querySelector('input[data-category="analytics"]').checked;
+    const advertisingChecked = document.querySelector('input[data-category="advertising"]').checked;
+    
+    let gcsSignal;
+    if (analyticsChecked && advertisingChecked) {
+        gcsSignal = 'G111';
+    } else if (!analyticsChecked && !advertisingChecked) {
+        gcsSignal = 'G100';
+    } else if (analyticsChecked && !advertisingChecked) {
+        gcsSignal = 'G101';
+    } else if (!analyticsChecked && advertisingChecked) {
+        gcsSignal = 'G110';
+    }
+
+    const consentData = {
+        status: 'custom',
+        gcs: gcsSignal,
+        categories: {
+            functional: true,
+            analytics: analyticsChecked,
+            performance: document.querySelector('input[data-category="performance"]').checked,
+            advertising: advertisingChecked,
+            uncategorized: document.querySelector('input[data-category="uncategorized"]') ? 
+                document.querySelector('input[data-category="uncategorized"]').checked : false
+        },
+        timestamp: new Date().getTime()
+    };
+    
+    setCookie('cookie_consent', JSON.stringify(consentData), 365);
+    updateConsentMode(consentData);
+    loadCookiesAccordingToConsent(consentData);
+    
+    // Fire UET consent update event with appropriate status
+    const consentStatus = advertisingChecked ? 'G' : 'D';
+    fireUETConsentEvent('update', consentStatus);
+    
+    if (!consentData.categories.analytics) clearCategoryCookies('analytics');
+    if (!consentData.categories.performance) clearCategoryCookies('performance');
+    if (!consentData.categories.advertising) clearCategoryCookies('advertising');
+    if (!consentData.categories.uncategorized) clearCategoryCookies('uncategorized');
+    
+    if (config.analytics.enabled) {
+        updateConsentStats('custom');
+    }
+}
+
+// Helper functions
+function clearNonEssentialCookies() {
     const cookies = document.cookie.split(';');
     cookies.forEach(cookie => {
         const [nameValue] = cookie.trim().split('=');
         const name = nameValue.trim();
+        let isEssential = false;
         
-        if (!name) return;
-        
-        let categorized = false;
         for (const pattern in cookieDatabase) {
-            if (name.startsWith(pattern)) {
-                const category = cookieDatabase[pattern].category;
-                result[category].push({
-                    name: name,
-                    purpose: cookieDatabase[pattern].purpose,
-                    expiry: cookieDatabase[pattern].expiry,
-                    type: cookieDatabase[pattern].type
-                });
-                categorized = true;
+            if (name.startsWith(pattern) && cookieDatabase[pattern].category === 'functional') {
+                isEssential = true;
                 break;
             }
         }
         
-        if (!categorized && name !== 'cookie_consent') {
-            result.uncategorized.push({
-                name: name,
-                purpose: 'Unknown',
-                expiry: 'Session',
-                type: 'HTTP Cookie'
-            });
+        if (!isEssential && name && name !== 'cookie_consent') {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
         }
     });
-    
-    return result;
 }
 
-// Export functions for global access
-window.CookieConsent = {
+function clearCategoryCookies(category) {
+    const cookies = scanAndCategorizeCookies()[category];
+    cookies.forEach(cookie => {
+        document.cookie = `${cookie.name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+    });
+}
+
+function loadCookiesAccordingToConsent(consentData) {
+    if (consentData.categories.analytics) {
+        loadAnalyticsCookies();
+    }
+    
+    if (consentData.categories.advertising) {
+        loadAdvertisingCookies();
+    }
+    
+    if (consentData.categories.performance) {
+        loadPerformanceCookies();
+    }
+}
+
+function updateConsentMode(consentData) {
+    const consentStates = {
+        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
+        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
+        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
+        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
+        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
+        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
+        'security_storage': 'granted'
+    };
+
+    // Determine GCS signal based on consent status and categories
+    let gcsSignal = 'G100'; // Default to all denied
+    
+    if (consentData.status === 'accepted') {
+        gcsSignal = 'G111'; // All granted
+    } else if (consentData.status === 'custom') {
+        if (consentData.categories.analytics && !consentData.categories.advertising) {
+            gcsSignal = 'G101'; // Analytics granted, ads denied
+        } else if (consentData.categories.advertising && !consentData.categories.analytics) {
+            gcsSignal = 'G110'; // Ads granted, analytics denied
+        } else if (consentData.categories.analytics && consentData.categories.advertising) {
+            gcsSignal = 'G111'; // Both granted (same as accept all)
+        } else {
+            gcsSignal = ''; // Both denied (same as reject all)
+        }
+    }
+
+    gtag('consent', 'update', consentStates);
+    
+    window.dataLayer.push({
+        'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': gcsSignal,
+        'consent_status': consentData.status,
+        'consent_categories': consentData.categories,
+        'timestamp': new Date().toISOString()
+    });
+}
+
+// Cookie management functions
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax; Secure";
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// Tracking functions
+function loadAnalyticsCookies() {
+    console.log('Loading analytics cookies');
+    if (typeof ga === 'undefined' && typeof gtag === 'function') {
+        gtag('js', new Date());
+        gtag('config', 'YOUR_GA4_MEASUREMENT_ID');
+    }
+}
+
+function loadAdvertisingCookies() {
+    console.log('Loading advertising cookies');
+    if (typeof fbq === 'undefined') {
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', 'YOUR_PIXEL_ID');
+        fbq('track', 'PageView');
+    }
+}
+
+function loadPerformanceCookies() {
+    console.log('Loading performance cookies');
+}
+
+// Main initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // First check if we should run on this domain
+    if (!isDomainAllowed()) {
+        console.log('Cookie consent banner disabled for this domain');
+        return;
+    }
+    
+    // Load analytics data
+    if (config.analytics.enabled) {
+        loadAnalyticsData();
+    }
+    
+    // Get geo data from dataLayer or detect
+    let geoData = {};
+    if (window.dataLayer && window.dataLayer.length > 0) {
+        const geoItem = window.dataLayer.find(item => item.country || item.region || item.city);
+        if (geoItem) {
+            geoData = {
+                country: geoItem.country || '',
+                region: geoItem.region || '',
+                city: geoItem.city || '',
+                language: geoItem.language || ''
+            };
+        }
+    }
+    
+    // Check geo-targeting restrictions
+    if (!checkGeoTargeting(geoData)) {
+        console.log('Cookie consent banner disabled for this location');
+        return;
+    }
+    
+    // Detect language
+    const detectedLanguage = detectUserLanguage(geoData);
+    
+    const detectedCookies = scanAndCategorizeCookies();
+    if (detectedCookies.uncategorized.length > 0) {
+        console.log('Uncategorized cookies found:', detectedCookies.uncategorized);
+    }
+    
+    injectConsentHTML(detectedCookies, detectedLanguage);
+    initializeCookieConsent(detectedCookies, detectedLanguage);
+    
+    if (getCookie('cookie_consent')) {
+        showFloatingButton();
+    }
+    
+    // Enhanced periodic cookie scan with validation
+    setInterval(() => {
+        const newCookies = scanAndCategorizeCookies();
+        if (JSON.stringify(newCookies) !== JSON.stringify(detectedCookies)) {
+            updateCookieTables(newCookies);
+        }
+    }, 10000
+
+                // Update cookie tables when new cookies are detected
+function updateCookieTables(newCookies) {
+    const categories = ['functional', 'analytics', 'performance', 'advertising', 'uncategorized'];
+    categories.forEach(category => {
+        const container = document.querySelector(`input[data-category="${category}"]`);
+        if (container) {
+            const parent = container.closest('.cookie-category');
+            if (parent) {
+                const detailsContainer = parent.querySelector('.cookie-details-container');
+                if (detailsContainer) {
+                    const content = detailsContainer.querySelector('.cookie-details-content');
+                    if (content) {
+                        content.innerHTML = newCookies[category].length > 0 ? 
+                            generateCookieTable(newCookies[category]) : 
+                            `<p class="no-cookies-message">No cookies in this category detected.</p>`;
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Handle scroll acceptance if enabled
+if (config.behavior.acceptOnScroll) {
+    let scrollTimer;
+    window.addEventListener('scroll', function() {
+        if (!getCookie('cookie_consent') && bannerShown) {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function() {
+                const scrollPercentage = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
+                if (scrollPercentage > 70) { // Accept if scrolled 70% of page
+                    acceptAllCookies();
+                    hideCookieBanner();
+                }
+            }, 200);
+        }
+    });
+}
+
+// Handle continue browsing acceptance if enabled
+if (config.behavior.acceptOnContinue) {
+    document.addEventListener('click', function() {
+        if (!getCookie('cookie_consent') && bannerShown) {
+            acceptAllCookies();
+            hideCookieBanner();
+        }
+    }, { once: true });
+}
+
+// Enhanced cookie functions with domain handling
+function deleteCookie(name) {
+    const domainParts = window.location.hostname.split('.');
+    let domain = domainParts.slice(-2).join('.');
+    if (domainParts.length > 2) {
+        domain = '.' + domain; // Add leading dot for subdomains
+    }
+    
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${domain}`;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+}
+
+// Export functions for external access if needed
+window.cookieConsentAPI = {
     showBanner: showCookieBanner,
     hideBanner: hideCookieBanner,
     showSettings: showCookieSettings,
+    showAnalytics: showAnalyticsDashboard,
     acceptAll: acceptAllCookies,
     rejectAll: rejectAllCookies,
-    saveSettings: saveCustomSettings,
+    getConsentData: function() {
+        const consent = getCookie('cookie_consent');
+        return consent ? JSON.parse(consent) : null;
+    },
+    getAnalyticsData: function() {
+        return config.analytics.enabled ? consentAnalytics : null;
+    },
     changeLanguage: changeLanguage,
-    getConfig: function() { return config; },
-    setConfig: function(newConfig) { 
-        config = { ...config, ...newConfig };
-        // Re-initialize with new config
-        const detectedCookies = scanAndCategorizeCookies();
-        const lang = detectUserLanguage({});
-        initializeCookieConsent(detectedCookies, lang);
+    resetConsent: function() {
+        deleteCookie('cookie_consent');
+        deleteCookie('dashboard_auth');
+        deleteCookie('preferred_language');
+        location.reload();
     }
 };
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeCookieConsent);
-} else {
-    initializeCookieConsent();
+// Initialize on window load as fallback
+window.addEventListener('load', function() {
+    if (!document.getElementById('cookieConsentBanner')) {
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!isDomainAllowed()) return;
+            
+            const geoData = {};
+            const detectedLanguage = detectUserLanguage(geoData);
+            const detectedCookies = scanAndCategorizeCookies();
+            
+            injectConsentHTML(detectedCookies, detectedLanguage);
+            initializeCookieConsent(detectedCookies, detectedLanguage);
+            
+            if (getCookie('cookie_consent')) {
+                showFloatingButton();
+            }
+        });
+    }
+});
+
+// Support for Turbolinks and other SPA frameworks
+document.addEventListener('turbolinks:load', function() {
+    if (!document.getElementById('cookieConsentBanner')) {
+        if (!isDomainAllowed()) return;
+        
+        const geoData = {};
+        const detectedLanguage = detectUserLanguage(geoData);
+        const detectedCookies = scanAndCategorizeCookies();
+        
+        injectConsentHTML(detectedCookies, detectedLanguage);
+        initializeCookieConsent(detectedCookies, detectedLanguage);
+        
+        if (getCookie('cookie_consent')) {
+            showFloatingButton();
+        }
+    }
+});
+
+// MutationObserver to handle dynamically added content
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (!document.getElementById('cookieConsentBanner')) {
+            if (!isDomainAllowed()) return;
+            
+            const geoData = {};
+            const detectedLanguage = detectUserLanguage(geoData);
+            const detectedCookies = scanAndCategorizeCookies();
+            
+            injectConsentHTML(detectedCookies, detectedLanguage);
+            initializeCookieConsent(detectedCookies, detectedLanguage);
+            
+            if (getCookie('cookie_consent')) {
+                showFloatingButton();
+            }
+        }
+    });
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+// Final initialization check
+if (!document.getElementById('cookieConsentBanner')) {
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!isDomainAllowed()) return;
+        
+        const geoData = {};
+        const detectedLanguage = detectUserLanguage(geoData);
+        const detectedCookies = scanAndCategorizeCookies();
+        
+        injectConsentHTML(detectedCookies, detectedLanguage);
+        initializeCookieConsent(detectedCookies, detectedLanguage);
+        
+        if (getCookie('cookie_consent')) {
+            showFloatingButton();
+        }
+    });
 }
