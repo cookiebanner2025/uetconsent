@@ -2771,6 +2771,16 @@ function initializeCookieConsent(detectedCookies, language) {
     // Explicitly apply the default language from config
     changeLanguage(config.languageConfig.defaultLanguage);
     
+    // Set the dropdown to the default language
+    const languageSelect = document.getElementById('cookieLanguageSelect');
+    if (languageSelect) {
+        languageSelect.value = config.languageConfig.defaultLanguage;
+        // Ensure the change event listener is correctly set up
+        languageSelect.addEventListener('change', function() {
+            changeLanguage(this.value);
+        });
+    }
+    
     // Set up event listeners
     setupEventListeners();
     
@@ -2809,14 +2819,6 @@ function initializeCookieConsent(detectedCookies, language) {
             }
         }
     });
-    
-    // Setup language selector change event
-    const languageSelect = document.getElementById('cookieLanguageSelect');
-    if (languageSelect) {
-        languageSelect.addEventListener('change', function() {
-            changeLanguage(this.value);
-        });
-    }
     
     // Setup admin button if enabled
     if (config.analytics.enabled && config.analytics.showDashboard && config.behavior.showAdminButton) {
