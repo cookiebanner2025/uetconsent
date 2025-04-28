@@ -1,20 +1,7 @@
-/**
- * Ultimate GDPR Cookie Consent Solution v4.4 - Advanced Edition
- * - Fully organized configuration with separate styling controls
- * - Complete admin dashboard with password protection
- * - Enhanced analytics tracking
- * - Multi-language support
- * - Mobile-friendly cookie details display
- * - Three-section analytics dashboard (1 day, 7 days, 30 days)
- * - Animation transition controls
- * - Banner scheduling functionality
- * - Consent analytics link
- */
 
-// ============== CONFIGURATION SECTION ============== //
 const config = {
     // Domain restriction
-    allowedDomains: ['dev-rpractice.pantheonsite.io', 'practicebdhere.myshopify.com', 'habibarafat.com'],
+    allowedDomains: ['dev-rpractice.pantheonsite.io', 'assistenzaelettrodomestici-firenze.com'],
     
     // Behavior configuration
     behavior: {
@@ -62,8 +49,8 @@ const config = {
     
     // Language configuration
     languageConfig: {
-        defaultLanguage: 'en',
-        availableLanguages: [], // Only en and fr will be used as requested
+        defaultLanguage: 'it',
+        availableLanguages: ['it', 'en'], // Only en and fr will be used as requested
         showLanguageSelector: true,
         autoDetectLanguage: true
     },
@@ -2761,6 +2748,7 @@ function shouldShowBanner() {
 }
 
 // Main initialization function
+// Main initialization function
 function initializeCookieConsent(detectedCookies, language) {
     const consentGiven = getCookie('cookie_consent');
     
@@ -2779,6 +2767,9 @@ function initializeCookieConsent(detectedCookies, language) {
             showFloatingButton();
         }
     }
+    
+    // Explicitly apply the default language from config
+    changeLanguage(config.languageConfig.defaultLanguage);
     
     // Set up event listeners
     setupEventListeners();
@@ -2808,7 +2799,7 @@ function initializeCookieConsent(detectedCookies, language) {
             if (e.target.dataset.state === 'truncated') {
                 full.style.display = 'inline';
                 truncated.style.display = 'none';
-                e.target.textContent = 'Hide full';
+                e.target.textContent = 'Show full';
                 e.target.dataset.state = 'full';
             } else {
                 full.style.display = 'none';
