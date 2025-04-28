@@ -1,21 +1,15 @@
 /**
  * Ultimate GDPR Cookie Consent Solution v4.5 - Advanced Edition
- * - Now with full support for Google Consent Mode v2 and Microsoft UET
- * - Fully organized configuration with separate styling controls
- * - Complete admin dashboard with password protection
- * - Enhanced analytics tracking
- * - Multi-language support
- * - Mobile-friendly cookie details display
- * - Three-section analytics dashboard (1 day, 7 days, 30 days)
- * - Animation transition controls
- * - Banner scheduling functionality
- * - Consent analytics link
+ * - Fixed language selection and default language issues
+ * - Improved button sizing for different languages
+ * - Ensured consistent styling across languages
+ * - Simplified language configuration to focus on en, it, fr
  */
 
 // ============== CONFIGURATION SECTION ============== //
 const config = {
     // Domain restriction
-    allowedDomains: ['dev-rpractice.pantheonsite.io', 'practicebdhere.myshopify.com', 'habibarafat.com'],
+    allowedDomains: ['dev-rpractice.pantheonsite.io', 'assistenzaelettrodomestici-firenze.com'],
     
     // Behavior configuration
     behavior: {
@@ -61,12 +55,13 @@ const config = {
         }
     },
     
-    // Language configuration
+    // Language configuration - updated to focus on en, it, fr
     languageConfig: {
-        defaultLanguage: 'en',
-        availableLanguages: [], // Only en and fr will be used as requested
+        defaultLanguage: 'it', // Italian as default as requested
+        availableLanguages: ['it', 'en', 'fr'], // Only these 3 languages
         showLanguageSelector: true,
-        autoDetectLanguage: true
+        autoDetectLanguage: true,
+        forceDefaultLanguage: true // New setting to always use default language first
     },
     
     // Geo-targeting configuration
@@ -123,13 +118,18 @@ const config = {
         }
     },
     
-    // Button styling
+    // Button styling - updated with min-width and auto-sizing
     buttonStyle: {
         borderRadius: '8px',
         padding: '12px 20px',
+        minWidth: '120px', // Added minimum width
+        maxWidth: '200px', // Added maximum width
         fontWeight: '600',
         fontSize: '14px',
         transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+        whiteSpace: 'nowrap', // Prevent text wrapping
+        overflow: 'hidden', // Hide overflow
+        textOverflow: 'ellipsis', // Add ellipsis if text is too long
         
         accept: {
             background: '#2ecc71',
@@ -296,79 +296,19 @@ const config = {
 window.dataLayer = window.dataLayer || [];
 function gtag() { dataLayer.push(arguments); }
 
-// Initialize Microsoft UET if not already present
-window.uetq = window.uetq || [];
-window.uetq.push('setConsentGiven', false); // Default to no consent
-
 // Set default consent (deny all except security)
-function initializeDefaultConsent() {
-    // Google Consent Mode v2 default state
-    gtag('consent', 'default', {
-        'ad_storage': 'denied',
-        'analytics_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
-        'personalization_storage': 'denied',
-        'functionality_storage': 'denied',
-        'security_storage': 'granted'
-    });
-    
-    // Fire default state for Microsoft UET
-    fireMicrosoftConsentEvent('default', 'D');
-}
-
-// Fire Microsoft UET consent event
-function fireMicrosoftConsentEvent(source, consentStatus) {
-    // Create a unique ID for this request
-    const requestId = generateUUID();
-    
-    // Fire the default state event
-    const defaultParams = {
-        evt: 'consent',
-        src: source,
-        asc: consentStatus,
-        mid: requestId,
-        bo: 1
-    };
-    
-    // Push to UET queue
-    window.uetq.push('event', 'consent', defaultParams);
-    
-    // Also send via image beacon for reliability
-    sendMicrosoftBeacon(defaultParams);
-}
-
-// Generate a UUID for Microsoft requests
-function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
-// Send Microsoft beacon
-function sendMicrosoftBeacon(params) {
-    const baseUrl = 'https://bat.bing.com/action/0?';
-    const queryParams = new URLSearchParams();
-    
-    // Add required parameters
-    queryParams.append('ti', 'YOUR_TAG_ID'); // Replace with your actual tag ID
-    queryParams.append('Ver', '2');
-    
-    // Add consent parameters
-    for (const key in params) {
-        queryParams.append(key, params[key]);
-    }
-    
-    // Create and send the beacon
-    const img = new Image();
-    img.src = baseUrl + queryParams.toString();
-}
+gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'analytics_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'personalization_storage': 'denied',
+    'functionality_storage': 'denied',
+    'security_storage': 'granted'
+});
 
 // Enhanced cookie database with detailed descriptions
 const cookieDatabase = {
-    // Existing cookies
     '_gcl': { category: 'advertising', duration: '90 days', description: 'Google Click Identifier - Tracks ad clicks and conversions' },
     '_gcl_au': { category: 'advertising', duration: '90 days', description: 'Google Ads conversion tracking' },
     'gclid': { category: 'advertising', duration: '30 days', description: 'Google Click ID - Tracks PPC ad clicks' },
@@ -420,8 +360,6 @@ const cookieDatabase = {
     '_gat': { category: 'analytics', duration: '1 minute', description: 'Google Analytics throttle' },
     'PHPSESSID': { category: 'functional', duration: 'Session', description: 'PHP session' },
     'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' },
-
-    // New Facebook cookies from your list
     'lu': { category: 'advertising', duration: '2 years', description: 'Used to record whether the person chose to remain logged in (User ID and miscellaneous log in information)' },
     'xs': { category: 'advertising', duration: '90 days', description: 'Used with c_user cookie to authenticate identity to Facebook (Session ID, creation time, authentication value)' },
     'c_user': { category: 'advertising', duration: '90 days', description: 'Used with xs cookie to authenticate identity to Facebook (User ID)' },
@@ -443,13 +381,11 @@ const cookieDatabase = {
     'rc': { category: 'advertising', duration: '7 days', description: 'Used to optimize site performance for advertisers' },
     'campaign_click_url': { category: 'advertising', duration: '30 days', description: 'Records Facebook URL landed on after clicking an ad' },
     'usida': { category: 'advertising', duration: 'Session', description: 'Collects browser and unique identifier for targeted advertising' },
-    
-    // Facebook functional cookies
     'wd': { category: 'functional', duration: 'Session', description: 'Stores browser window dimensions for page rendering optimization' },
     'presence': { category: 'functional', duration: 'Session', description: 'Contains user chat state' }
 };
 
-// Language translations (keeping only en and fr as requested)
+// Language translations - only keeping en, it, fr as requested
 const translations = {
     en: {
         title: "We value your privacy",
@@ -518,11 +454,50 @@ const translations = {
         passwordIncorrect: "Mot de passe incorrect",
         dashboardTitle: "Tableau de bord des analyses de consentement",
         seeAnalytics: "Voir les analyses de consentement"
+    },
+    it: {
+        title: "Rispettiamo la tua privacy",
+        description: "Utilizziamo i cookie per migliorare la tua esperienza, fornire annunci o contenuti personalizzati e analizzare il nostro traffico. Cliccando su \"Accetta tutto\", acconsenti all'uso dei cookie.",
+        privacy: "Privacy Policy",
+        customize: "Personalizza",
+        reject: "Rifiuta tutto",
+        accept: "Accetta tutto",
+        essential: "Cookie essenziali",
+        essentialDesc: "Necessari per il funzionamento",
+        analytics: "Cookie analitici",
+        analyticsDesc: "Analizzano le interazioni",
+        performance: "Cookie prestazioni",
+        performanceDesc: "Migliorano le prestazioni",
+        advertising: "Cookie pubblicitari",
+        advertisingDesc: "Mostrano annunci pertinenti",
+        other: "Altri cookie",
+        otherDesc: "Cookie non categorizzati",
+        save: "Salva preferenze",
+        language: "Italiano",
+        statsTitle: "Statistiche del Consenso",
+        statsAccepted: "Accettato",
+        statsRejected: "Rifiutato",
+        statsCustom: "Personalizzato",
+        statsTotal: "Totale",
+        statsPercentage: "Percentuale",
+        statsLast7Days: "Ultimi 7 Giorni",
+        statsLast30Days: "Ultimi 30 Giorni"
     }
 };
 
-// Initialize default consent state immediately
-initializeDefaultConsent();
+// Country to language mapping for auto-translation (simplified to focus on our 3 languages)
+const countryLanguageMap = {
+    // EU Countries
+    'FR': 'fr',     // France
+    'IT': 'it',     // Italy
+    'GB': 'en',     // United Kingdom
+    'US': 'en',     // United States
+    'CA': 'en',     // Canada
+    'CA': 'fr',     // Canada (French)
+    'BE': 'fr',     // Belgium (French)
+    'CH': 'fr',     // Switzerland (French)
+    'LU': 'fr'      // Luxembourg (French)
+};
 
 // Analytics data storage
 let consentAnalytics = {
@@ -800,9 +775,14 @@ function checkGeoTargeting(geoData) {
     return true;
 }
 
-// Detect user language based on country and browser settings
+// Detect user language based on country and browser settings - updated to prioritize default language
 function detectUserLanguage(geoData) {
-    // First check if language is stored in cookie
+    // First check if we should force the default language
+    if (config.languageConfig.forceDefaultLanguage) {
+        return config.languageConfig.defaultLanguage;
+    }
+    
+    // Then check if language is stored in cookie
     if (config.behavior.rememberLanguage) {
         const preferredLanguage = getCookie('preferred_language');
         if (preferredLanguage && translations[preferredLanguage]) {
@@ -836,7 +816,7 @@ function getAvailableLanguages() {
     return Object.keys(translations);
 }
 
-// Change language dynamically
+// Change language dynamically - updated to handle button sizing
 function changeLanguage(languageCode) {
     const lang = translations[languageCode] || translations.en;
     
@@ -846,9 +826,18 @@ function changeLanguage(languageCode) {
         banner.querySelector('h2').textContent = lang.title;
         banner.querySelector('p').textContent = lang.description;
         banner.querySelector('.privacy-policy-link').textContent = lang.privacy;
-        banner.querySelector('#acceptAllBtn').textContent = lang.accept;
-        banner.querySelector('#adjustConsentBtn').textContent = lang.customize;
-        banner.querySelector('#rejectAllBtn').textContent = lang.reject;
+        
+        // Update buttons with text and maintain consistent sizing
+        const acceptBtn = banner.querySelector('#acceptAllBtn');
+        const rejectBtn = banner.querySelector('#rejectAllBtn');
+        const adjustBtn = banner.querySelector('#adjustConsentBtn');
+        
+        acceptBtn.textContent = lang.accept;
+        rejectBtn.textContent = lang.reject;
+        adjustBtn.textContent = lang.customize;
+        
+        // Calculate and set button widths based on text length
+        setButtonWidths(acceptBtn, rejectBtn, adjustBtn);
     }
     
     // Update modal text
@@ -873,9 +862,16 @@ function changeLanguage(languageCode) {
             }
         }
         
-        modal.querySelector('#rejectAllSettingsBtn').textContent = lang.reject;
-        modal.querySelector('#saveSettingsBtn').textContent = lang.save;
-        modal.querySelector('#acceptAllSettingsBtn').textContent = lang.accept;
+        // Update modal buttons with consistent sizing
+        const rejectAllBtn = modal.querySelector('#rejectAllSettingsBtn');
+        const saveBtn = modal.querySelector('#saveSettingsBtn');
+        const acceptAllBtn = modal.querySelector('#acceptAllSettingsBtn');
+        
+        rejectAllBtn.textContent = lang.reject;
+        saveBtn.textContent = lang.save;
+        acceptAllBtn.textContent = lang.accept;
+        
+        setButtonWidths(rejectAllBtn, saveBtn, acceptAllBtn);
     }
     
     // Update floating button title
@@ -901,6 +897,26 @@ function changeLanguage(languageCode) {
     if (config.behavior.rememberLanguage) {
         setCookie('preferred_language', languageCode, 365);
     }
+}
+
+// Helper function to set consistent button widths based on text length
+function setButtonWidths(...buttons) {
+    // Find the widest button text
+    let maxWidth = 0;
+    buttons.forEach(btn => {
+        btn.style.width = 'auto'; // Reset to natural width
+        const width = btn.offsetWidth;
+        if (width > maxWidth) maxWidth = width;
+    });
+    
+    // Apply minimum and maximum width constraints
+    maxWidth = Math.max(maxWidth, parseInt(config.buttonStyle.minWidth));
+    maxWidth = Math.min(maxWidth, parseInt(config.buttonStyle.maxWidth));
+    
+    // Set all buttons to the same width
+    buttons.forEach(btn => {
+        btn.style.width = `${maxWidth}px`;
+    });
 }
 
 // Enhanced cookie scanning function with better matching
@@ -1201,6 +1217,11 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         border: none;
         flex: 1;
         letter-spacing: 0.2px;
+        min-width: ${config.buttonStyle.minWidth};
+        max-width: ${config.buttonStyle.maxWidth};
+        white-space: ${config.buttonStyle.whiteSpace};
+        overflow: ${config.buttonStyle.overflow};
+        text-overflow: ${config.buttonStyle.textOverflow};
     }
 
     .adjust-btn {
@@ -1958,6 +1979,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             grid-template-columns: repeat(2, 1fr);
         }
     }
+
     @media (min-width: 768px) {
         .cookie-consent-buttons {
             flex-direction: row;
@@ -1966,6 +1988,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
             flex: 1;
         }
     }
+
     @media (max-width: 768px) {
         .cookie-consent-banner {
             width: 90%;
@@ -2590,18 +2613,29 @@ function updateConsentMode(consentData) {
         'security_storage': 'granted'
     };
 
-    // Update Google Consent Mode
+    // Determine GCS signal based on consent status and categories
+    let gcsSignal = 'G100'; // Default to all denied
+    
+    if (consentData.status === 'accepted') {
+        gcsSignal = 'G111'; // All granted
+    } else if (consentData.status === 'custom') {
+        if (consentData.categories.analytics && !consentData.categories.advertising) {
+            gcsSignal = 'G101'; // Analytics granted, ads denied
+        } else if (consentData.categories.advertising && !consentData.categories.analytics) {
+            gcsSignal = 'G110'; // Ads granted, analytics denied
+        } else if (consentData.categories.analytics && consentData.categories.advertising) {
+            gcsSignal = 'G111'; // Both granted (same as accept all)
+        } else {
+            gcsSignal = ''; // Both denied (same as reject all)
+        }
+    }
+
     gtag('consent', 'update', consentStates);
     
-    // Update Microsoft UET consent
-    const uetConsentStatus = consentData.categories.advertising ? 'G' : 'D';
-    fireMicrosoftConsentEvent('update', uetConsentStatus);
-    
-    // Push to dataLayer for tracking
     window.dataLayer.push({
         'event': 'cookie_consent_update',
         'consent_mode': consentStates,
-        'gcs': consentData.gcs,
+        'gcs': gcsSignal,
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
@@ -2692,7 +2726,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Detect language
+    // Detect language - now prioritizing default language first
     const detectedLanguage = detectUserLanguage(geoData);
     
     const detectedCookies = scanAndCategorizeCookies();
