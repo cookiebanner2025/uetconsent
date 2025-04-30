@@ -2548,7 +2548,10 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-// Update consent mode for both Google and Microsoft UET
+
+
+
+
 // Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
@@ -2610,28 +2613,34 @@ function updateConsentMode(consentData) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
 
-        // Override dataLayer.push to block unwanted UET-related events
+        // Override dataLayer.push to block or delay unwanted UET-related events
         const originalDataLayerPush = window.dataLayer.push;
+        const delayedEvents = []; // Store events to delay
+
         window.dataLayer.push = function (...args) {
             const event = args[0];
             // Allow the intended UET consent update event
             if (event && typeof event === 'object' && event.event === 'uet_consent_update') {
                 return originalDataLayerPush.apply(window.dataLayer, args);
             }
-            // Block any GTM consent events that might interfere
+            // Block or delay GTM consent events
             if (event && typeof event === 'object' && 
-                (event.event === 'gtmConsent' || event.event === 'uet_gtm_consent' || event.event.includes('gtmConsent'))) {
-                console.warn('Blocked unwanted UET GTM consent event:', event);
-                return; // Prevent unwanted GTM consent events
+                (event.event === 'gtmConsent' || 
+                 event.event === 'uet_gtm_consent' || 
+                 event.event.toLowerCase().includes('gtmconsent') || 
+                 (event.event && typeof event.event === 'string' && event.event.includes('Consent')))) {
+                console.warn('Delaying potential UET GTM consent event:', event);
+                delayedEvents.push(args); // Delay this event
+                return; // Prevent immediate firing
             }
             return originalDataLayerPush.apply(window.dataLayer, args);
         };
 
-        // Ensure the UET consent update fires after the pageLoad event
+        // Ensure the UET consent update fires immediately after the pageLoad event
         const checkPageLoad = () => {
             const pageLoadEvent = window.dataLayer.find(item => item.event === 'gtm.load' || item.event === 'pageLoad');
             if (pageLoadEvent) {
-                // Send the UET consent update request after pageLoad
+                // Send the UET consent update request immediately after pageLoad
                 sendUetConsentRequest(uetConsentUrl.toString());
 
                 // Push UET consent update to dataLayer for tracking
@@ -2646,16 +2655,21 @@ function updateConsentMode(consentData) {
                     }
                 });
 
-                // Restore original dataLayer.push after the intended request
+                // Now release any delayed events (like gtmConsent)
+                delayedEvents.forEach(eventArgs => {
+                    originalDataLayerPush.apply(window.dataLayer, eventArgs);
+                });
+
+                // Restore original dataLayer.push
                 window.dataLayer.push = originalDataLayerPush;
             } else {
                 // If pageLoad hasn't fired yet, retry after a short delay
-                setTimeout(checkPageLoad, 50);
+                setTimeout(checkPageLoad, 10); // Reduced delay for faster execution
             }
         };
 
-        // Start checking for pageLoad event
-        setTimeout(checkPageLoad, 50);
+        // Start checking for pageLoad event with minimal delay
+        setTimeout(checkPageLoad, 10);
     }
 }
 
@@ -2676,6 +2690,25 @@ function sendUetConsentRequest(url) {
         };
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Generate a unique MID (Microsoft ID)
 function generateUniqueId() {
