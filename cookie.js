@@ -2628,8 +2628,8 @@ function updateConsentMode(consentData) {
         const delayedRequests = []; // Store requests to delay
 
         sendUetConsentRequest = function (url) {
-            if (url.includes('evt=Consent')) {
-                console.warn('Delaying evt=Consent request:', url);
+            if (url.includes('evt=gtmConsent')) {
+                console.warn('Delaying evt=gtmConsent request:', url);
                 delayedRequests.push(url); // Delay this request
                 return;
             }
@@ -2696,10 +2696,6 @@ function sendUetConsentRequest(url) {
         };
     }
 }
-
-
-
-
 
 
 
