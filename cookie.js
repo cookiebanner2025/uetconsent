@@ -2585,27 +2585,29 @@ function updateConsentMode(consentData) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
         const uetTagId = detectUetTagId();
         const mid = generateUniqueId();
+        const sid = generateUniqueId().substring(0, 32);
+        const vid = generateUniqueId().substring(0, 32);
         
-        // Build the single UET consent URL
+        // Build the single UET consent URL with exact parameters you requested
         const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
         uetConsentUrl.searchParams.append('ti', uetTagId);
+        uetConsentUrl.searchParams.append('tm', 'gtm002');
         uetConsentUrl.searchParams.append('Ver', '2');
         uetConsentUrl.searchParams.append('mid', mid);
-        uetConsentUrl.searchParams.append('bo', '3'); // bo=3 for consent update
+        uetConsentUrl.searchParams.append('bo', consentData.status === 'accepted' ? '4' : '6');
+        uetConsentUrl.searchParams.append('sid', sid);
+        uetConsentUrl.searchParams.append('vid', vid);
+        uetConsentUrl.searchParams.append('vids', '0');
+        uetConsentUrl.searchParams.append('msclkid', 'N');
         uetConsentUrl.searchParams.append('evt', 'consent');
         uetConsentUrl.searchParams.append('src', 'update');
         uetConsentUrl.searchParams.append('cdb', 'AQAQ');
         uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
         
-        // Only include tm parameter if the UET tag is loaded through GTM
-        if (window.google_tag_manager) {
-            uetConsentUrl.searchParams.append('tm', 'gtm002');
-        }
-        
         // Send the single consent update request
         sendUetConsentRequest(uetConsentUrl.toString());
         
-        // Push UET consent update to dataLayer (for tracking purposes, but doesn't send additional requests)
+        // Push UET consent update to dataLayer (for tracking purposes only)
         window.dataLayer.push({
             'event': 'uet_consent_update',
             'uet_consent': {
@@ -2628,7 +2630,6 @@ function updateConsentMode(consentData) {
         'timestamp': new Date().toISOString()
     });
 }
-
 // Send UET consent request
 function sendUetConsentRequest(url) {
     const img = new Image();
