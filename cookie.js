@@ -2548,7 +2548,6 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-// Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
@@ -2628,7 +2627,6 @@ function updateConsentMode(consentData) {
         'timestamp': new Date().toISOString()
     });
 }
-
 // Send UET consent request
 function sendUetConsentRequest(url) {
     const img = new Image();
