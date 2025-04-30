@@ -2582,47 +2582,69 @@ function updateConsentMode(consentData) {
     // Update Microsoft UET consent if enabled
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
+        
+        // Push UET consent update to dataLayer
+        const uetConsentEvent = {
+            'event': 'uet_consent_update',
+            'uet_consent': {
+                'ad_storage': uetConsentState,
+                'status': consentData.status,
+                'src': 'update',
+                'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                'timestamp': new Date().toISOString()
+            }
+        };
+        
+        window.dataLayer.push(uetConsentEvent);
+        
+        // Update UET queue
         window.uetq.push('consent', 'update', {
             'ad_storage': uetConsentState
         });
         
-        // Push consent data to dataLayer
-        window.dataLayer.push({
-            'event': 'cookie_consent_update',
-            'consent_mode': consentStates,
-            'gcs': gcsSignal,
-            'consent_status': consentData.status,
-            'consent_categories': consentData.categories,
-            'timestamp': new Date().toISOString()
-        });
+        // Build UET consent URL with all required parameters
+        const uetTagId = detectUetTagId();
+        const mid = generateUniqueId(); // Generate a new MID for each consent update
         
-        // Fire single UET consent update URL (only actionp endpoint)
-        const tagId = detectUetTagId();
-        const mid = generateUUID();
+        // Create the UET consent URL with all required parameters
+        const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
+        uetConsentUrl.searchParams.append('ti', uetTagId);
+        uetConsentUrl.searchParams.append('Ver', '2');
+        uetConsentUrl.searchParams.append('mid', mid);
+        uetConsentUrl.searchParams.append('bo', '3'); // bo=3 for consent update
+        uetConsentUrl.searchParams.append('evt', 'consent');
+        uetConsentUrl.searchParams.append('src', 'update');
+        uetConsentUrl.searchParams.append('cdb', 'AQAQ');
+        uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
         
-        // Only include tm parameter if it was detected in the original tag
-        const tmParam = document.querySelector('script[src*="bat.bing.com"], script[src*="bat.bing.net"]')?.src.includes('tm=') ? 
-            '&tm=gtm002' : '';
-            
-        const consentUrl = `https://bat.bing.net/actionp/0?ti=${tagId}${tmParam}&Ver=2&mid=${mid}&bo=${consentData.status === 'accepted' ? 1 : 2}&evt=consent&src=update&cdb=${gcsSignal ? 'AQIT' : 'AQAQ'}&asc=${uetConsentState === 'granted' ? 'G' : 'D'}`;
+        // Only include tm parameter if the UET tag is loaded through GTM
+        if (window.google_tag_manager) {
+            uetConsentUrl.searchParams.append('tm', 'gtm002');
+        }
         
-        // Fire the consent update
-        fireUetConsentUpdate(consentUrl);
+        // Send the consent update
+        sendUetConsentRequest(uetConsentUrl.toString());
     }
+    
+    // Push Google consent update to dataLayer
+    window.dataLayer.push({
+        'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': gcsSignal,
+        'consent_status': consentData.status,
+        'consent_categories': consentData.categories,
+        'timestamp': new Date().toISOString()
+    });
 }
 
-// Fire UET consent update with beacon API if available
-function fireUetConsentUpdate(url) {
-    if (navigator.sendBeacon) {
-        navigator.sendBeacon(url);
-    } else {
-        const img = new Image();
-        img.src = url;
-    }
+// Send UET consent request
+function sendUetConsentRequest(url) {
+    const img = new Image();
+    img.src = url;
 }
 
-// Generate a UUID for Microsoft UET
-function generateUUID() {
+// Generate a unique MID (Microsoft ID)
+function generateUniqueId() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
