@@ -2548,8 +2548,6 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-
-
 // Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
@@ -2595,87 +2593,66 @@ function updateConsentMode(consentData) {
         const uetTagId = detectUetTagId();
         const mid = generateUniqueId();
 
-        // Build the UET consent URL for default state (this should already be the 2nd request)
-        const uetDefaultConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
-        uetDefaultConsentUrl.searchParams.append('ti', uetTagId);
-        uetDefaultConsentUrl.searchParams.append('Ver', '2');
-        uetDefaultConsentUrl.searchParams.append('mid', generateUniqueId());
-        uetDefaultConsentUrl.searchParams.append('bo', '3');
-        uetDefaultConsentUrl.searchParams.append('evt', 'consent');
-        uetDefaultConsentUrl.searchParams.append('src', 'default');
-        uetDefaultConsentUrl.searchParams.append('cdb', 'AQAQ');
-        uetDefaultConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
-        if (window.google_tag_manager) {
-            uetDefaultConsentUrl.searchParams.append('tm', 'gtm002');
-        }
-
-        // Build the UET consent URL for update state (this should be the 3rd request)
+        // Build the UET consent URL for update state
         const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
         uetConsentUrl.searchParams.append('ti', uetTagId);
         uetConsentUrl.searchParams.append('Ver', '2');
         uetConsentUrl.searchParams.append('mid', mid);
-        uetConsentUrl.searchParams.append('bo', '3');
+        uetConsentUrl.searchParams.append('bo', '3'); // bo=3 for consent update
         uetConsentUrl.searchParams.append('evt', 'consent');
         uetConsentUrl.searchParams.append('src', 'update');
         uetConsentUrl.searchParams.append('cdb', 'AQAQ');
         uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
+
+        // Only include tm parameter if the UET tag is loaded through GTM
         if (window.google_tag_manager) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
 
-        // Override sendUetConsentRequest to block or delay evt=gtmConsent
-        const originalSendUetConsentRequest = sendUetConsentRequest;
-        const delayedRequests = []; // Store requests to delay
-
-        sendUetConsentRequest = function (url) {
-            if (url.includes('evt=gtmConsent')) {
-                console.warn('Delaying evt=gtmConsent request:', url);
-                delayedRequests.push(url); // Delay this request
-                return;
+        // Ensure no other UET-related events are pushed to dataLayer that might trigger unwanted requests
+        const originalDataLayerPush = window.dataLayer.push;
+        window.dataLayer.push = function (...args) {
+            const event = args[0];
+            // Block any UET-related events that might interfere (like gtmConsent)
+            if (event && typeof event === 'object' && event.event === 'uet_consent_update') {
+                return originalDataLayerPush.apply(window.dataLayer, args);
             }
-            originalSendUetConsentRequest(url);
+            if (event && typeof event === 'object' && (event.event === 'gtmConsent' || event.event === 'uet_gtm_consent')) {
+                console.warn('Blocked unwanted UET GTM consent event:', event);
+                return; // Prevent unwanted GTM consent events
+            }
+            return originalDataLayerPush.apply(window.dataLayer, args);
         };
 
-        // Send the default consent request (should be 2nd)
-        originalSendUetConsentRequest(uetDefaultConsentUrl.toString());
-
-        // Send the update consent request immediately (should be 3rd)
-        originalSendUetConsentRequest(uetConsentUrl.toString());
-
-        // Push UET consent update to dataLayer for tracking
-        window.dataLayer.push({
-            'event': 'uet_consent_update',
-            'uet_consent': {
-                'ad_storage': uetConsentState,
-                'status': consentData.status,
-                'src': 'update',
-                'asc': uetConsentState === 'granted' ? 'G' : 'D',
-                'timestamp': new Date().toISOString()
-            }
-        });
-
-        // Ensure pageLoad event fires after the update request
-        const ensurePageLoad = () => {
+        // Ensure the UET consent update fires after the pageLoad event
+        const checkPageLoad = () => {
             const pageLoadEvent = window.dataLayer.find(item => item.event === 'gtm.load' || item.event === 'pageLoad');
-            if (!pageLoadEvent) {
+            if (pageLoadEvent) {
+                // Send the UET consent update request after pageLoad
+                sendUetConsentRequest(uetConsentUrl.toString());
+
+                // Push UET consent update to dataLayer for tracking
                 window.dataLayer.push({
-                    'event': 'pageLoad',
-                    'timestamp': new Date().toISOString()
+                    'event': 'uet_consent_update',
+                    'uet_consent': {
+                        'ad_storage': uetConsentState,
+                        'status': consentData.status,
+                        'src': 'update',
+                        'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                        'timestamp': new Date().toISOString()
+                    }
                 });
+
+                // Restore original dataLayer.push after the intended request
+                window.dataLayer.push = originalDataLayerPush;
+            } else {
+                // If pageLoad hasn't fired yet, retry after a short delay
+                setTimeout(checkPageLoad, 100);
             }
         };
 
-        // Fire pageLoad event after a short delay to ensure it’s after the update request
-        setTimeout(ensurePageLoad, 10);
-
-        // Release any delayed requests (like evt=gtmConsent) after everything else
-        setTimeout(() => {
-            delayedRequests.forEach(url => {
-                originalSendUetConsentRequest(url);
-            });
-            // Restore the original sendUetConsentRequest function
-            sendUetConsentRequest = originalSendUetConsentRequest;
-        }, 50);
+        // Delay the check to ensure the pageLoad event has a chance to fire
+        setTimeout(checkPageLoad, 50);
     }
 }
 
@@ -2696,17 +2673,6 @@ function sendUetConsentRequest(url) {
         };
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 // Generate a unique MID (Microsoft ID)
 function generateUniqueId() {
