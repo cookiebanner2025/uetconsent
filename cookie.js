@@ -2562,7 +2562,6 @@ function updateConsentMode(consentData) {
 
     // Determine GCS signal based on consent status and categories
     let gcsSignal = 'G100'; // Default to all denied
-    
     if (consentData.status === 'accepted') {
         gcsSignal = 'G111'; // All granted
     } else if (consentData.status === 'custom') {
@@ -2572,21 +2571,29 @@ function updateConsentMode(consentData) {
             gcsSignal = 'G110'; // Ads granted, analytics denied
         } else if (consentData.categories.analytics && consentData.categories.advertising) {
             gcsSignal = 'G111'; // Both granted (same as accept all)
-        } else {
-            gcsSignal = ''; // Both denied (same as reject all)
         }
     }
 
     // Update Google consent
     gtag('consent', 'update', consentStates);
-    
+
+    // Push Google consent update to dataLayer (this triggers the pageLoad event)
+    window.dataLayer.push({
+        'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': gcsSignal,
+        'consent_status': consentData.status,
+        'consent_categories': consentData.categories,
+        'timestamp': new Date().toISOString()
+    });
+
     // Update Microsoft UET consent if enabled
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
         const uetTagId = detectUetTagId();
         const mid = generateUniqueId();
-        
-        // Build the single UET consent URL
+
+        // Build the UET consent URL for update state
         const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
         uetConsentUrl.searchParams.append('ti', uetTagId);
         uetConsentUrl.searchParams.append('Ver', '2');
@@ -2596,43 +2603,75 @@ function updateConsentMode(consentData) {
         uetConsentUrl.searchParams.append('src', 'update');
         uetConsentUrl.searchParams.append('cdb', 'AQAQ');
         uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
-        
+
         // Only include tm parameter if the UET tag is loaded through GTM
         if (window.google_tag_manager) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
-        
-        // Send the single consent update request
-        sendUetConsentRequest(uetConsentUrl.toString());
-        
-        // Push UET consent update to dataLayer (for tracking purposes, but doesn't send additional requests)
-        window.dataLayer.push({
-            'event': 'uet_consent_update',
-            'uet_consent': {
-                'ad_storage': uetConsentState,
-                'status': consentData.status,
-                'src': 'update',
-                'asc': uetConsentState === 'granted' ? 'G' : 'D',
-                'timestamp': new Date().toISOString()
+
+        // Ensure no other UET-related events are pushed to dataLayer that might trigger unwanted requests
+        const originalDataLayerPush = window.dataLayer.push;
+        window.dataLayer.push = function (...args) {
+            const event = args[0];
+            // Block any UET-related events that might interfere (like gtmConsent)
+            if (event && typeof event === 'object' && event.event === 'uet_consent_update') {
+                return originalDataLayerPush.apply(window.dataLayer, args);
             }
-        });
+            if (event && typeof event === 'object' && (event.event === 'gtmConsent' || event.event === 'uet_gtm_consent')) {
+                console.warn('Blocked unwanted UET GTM consent event:', event);
+                return; // Prevent unwanted GTM consent events
+            }
+            return originalDataLayerPush.apply(window.dataLayer, args);
+        };
+
+        // Ensure the UET consent update fires after the pageLoad event
+        const checkPageLoad = () => {
+            const pageLoadEvent = window.dataLayer.find(item => item.event === 'gtm.load' || item.event === 'pageLoad');
+            if (pageLoadEvent) {
+                // Send the UET consent update request after pageLoad
+                sendUetConsentRequest(uetConsentUrl.toString());
+
+                // Push UET consent update to dataLayer for tracking
+                window.dataLayer.push({
+                    'event': 'uet_consent_update',
+                    'uet_consent': {
+                        'ad_storage': uetConsentState,
+                        'status': consentData.status,
+                        'src': 'update',
+                        'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                        'timestamp': new Date().toISOString()
+                    }
+                });
+
+                // Restore original dataLayer.push after the intended request
+                window.dataLayer.push = originalDataLayerPush;
+            } else {
+                // If pageLoad hasn't fired yet, retry after a short delay
+                setTimeout(checkPageLoad, 100);
+            }
+        };
+
+        // Delay the check to ensure the pageLoad event has a chance to fire
+        setTimeout(checkPageLoad, 50);
     }
-    
-    // Push Google consent update to dataLayer
-    window.dataLayer.push({
-        'event': 'cookie_consent_update',
-        'consent_mode': consentStates,
-        'gcs': gcsSignal,
-        'consent_status': consentData.status,
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
 }
 
-// Send UET consent request
+// Send UET consent request using Image to ensure ping type
 function sendUetConsentRequest(url) {
-    const img = new Image();
-    img.src = url;
+    // Use a beacon if available (modern browsers support navigator.sendBeacon for true ping)
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+    } else {
+        // Fallback to Image method
+        const img = new Image();
+        img.src = url;
+        img.style.display = 'none'; // Ensure the image is not visible
+        document.body.appendChild(img);
+        // Clean up the image after the request is sent
+        img.onload = img.onerror = () => {
+            document.body.removeChild(img);
+        };
+    }
 }
 
 // Generate a unique MID (Microsoft ID)
