@@ -2548,7 +2548,6 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-// Update the updateConsentMode function to consolidate UET requests
 function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
@@ -2580,7 +2579,7 @@ function updateConsentMode(consentData) {
     // Update Google consent
     gtag('consent', 'update', consentStates);
     
-    // Update Microsoft UET consent if enabled - MODIFIED TO SEND ONLY ONE REQUEST
+    // Update Microsoft UET consent if enabled
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
         
@@ -2623,7 +2622,7 @@ function updateConsentMode(consentData) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
         
-        // Send the consent update - ONLY ONE REQUEST
+        // Send the consent update
         sendUetConsentRequest(uetConsentUrl.toString());
     }
     
