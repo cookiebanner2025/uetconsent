@@ -2548,8 +2548,6 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-// Update consent mode for both Google and Microsoft UET
-// Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
@@ -2573,21 +2571,29 @@ function updateConsentMode(consentData) {
             gcsSignal = 'G110'; // Ads granted, analytics denied
         } else if (consentData.categories.analytics && consentData.categories.advertising) {
             gcsSignal = 'G111'; // Both granted (same as accept all)
-        } else {
-            gcsSignal = ''; // Both denied (same as reject all)
         }
     }
 
     // Update Google consent
     gtag('consent', 'update', consentStates);
-    
+
+    // Push Google consent update to dataLayer (this triggers the pageLoad event)
+    window.dataLayer.push({
+        'event': 'cookie_consent_update',
+        'consent_mode': consentStates,
+        'gcs': gcsSignal,
+        'consent_status': consentData.status,
+        'consent_categories': consentData.categories,
+        'timestamp': new Date().toISOString()
+    });
+
     // Update Microsoft UET consent if enabled
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
         const uetTagId = detectUetTagId();
         const mid = generateUniqueId();
-        
-        // Build the single UET consent URL
+
+        // Build the UET consent URL for update state
         const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
         uetConsentUrl.searchParams.append('ti', uetTagId);
         uetConsentUrl.searchParams.append('Ver', '2');
@@ -2597,42 +2603,46 @@ function updateConsentMode(consentData) {
         uetConsentUrl.searchParams.append('src', 'update');
         uetConsentUrl.searchParams.append('cdb', 'AQAQ');
         uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
-        
+
         // Only include tm parameter if the UET tag is loaded through GTM
         if (window.google_tag_manager) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
-        
-        // Send the single consent update request
-        sendUetConsentRequest(uetConsentUrl.toString());
-        
-        // Push UET consent update to dataLayer (for tracking purposes, but doesn't send additional requests)
-        window.dataLayer.push({
-            'event': 'uet_consent_update',
-            'uet_consent': {
-                'ad_storage': uetConsentState,
-                'status': consentData.status,
-                'src': 'update',
-                'asc': uetConsentState === 'granted' ? 'G' : 'D',
-                'timestamp': new Date().toISOString()
+
+        // Ensure the UET consent update fires after the pageLoad event
+        // Listen for the pageLoad event in the dataLayer
+        const checkPageLoad = () => {
+            const pageLoadEvent = window.dataLayer.find(item => item.event === 'gtm.load' || item.event === 'pageLoad');
+            if (pageLoadEvent) {
+                // Send the UET consent update request after pageLoad
+                sendUetConsentRequest(uetConsentUrl.toString());
+
+                // Push UET consent update to dataLayer for tracking (but this doesn't send additional requests)
+                window.dataLayer.push({
+                    'event': 'uet_consent_update',
+                    'uet_consent': {
+                        'ad_storage': uetConsentState,
+                        'status': consentData.status,
+                        'src': 'update',
+                        'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                        'timestamp': new Date().toISOString()
+                    }
+                });
+            } else {
+                // If pageLoad hasn't fired yet, retry after a short delay
+                setTimeout(checkPageLoad, 100);
             }
-        });
+        };
+
+        checkPageLoad();
     }
-    
-    // Push Google consent update to dataLayer
-    window.dataLayer.push({
-        'event': 'cookie_consent_update',
-        'consent_mode': consentStates,
-        'gcs': gcsSignal,
-        'consent_status': consentData.status,
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
 }
-// Send UET consent request
+
+// Send UET consent request using Image to ensure ping type
 function sendUetConsentRequest(url) {
     const img = new Image();
     img.src = url;
+    document.body.appendChild(img); // Append to DOM to ensure the request is sent
 }
 
 // Generate a unique MID (Microsoft ID)
