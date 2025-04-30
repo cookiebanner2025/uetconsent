@@ -2573,20 +2573,20 @@ function updateConsentMode(consentData) {
         } else if (consentData.categories.analytics && consentData.categories.advertising) {
             gcsSignal = 'G111'; // Both granted (same as accept all)
         } else {
-            gcsSignal = ''; // Both denied (same as reject all)
+            gcsSignal = 'G100'; // Both denied (same as reject all)
         }
     }
 
     // Update Google consent
     gtag('consent', 'update', consentStates);
     
-    // Update Microsoft UET consent if enabled
+    // Update Microsoft UET consent if enabled - SINGLE URL VERSION
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
         const uetTagId = detectUetTagId();
         const mid = generateUniqueId();
         
-        // Build the single UET consent URL
+        // Build the single UET consent URL with all required parameters
         const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
         uetConsentUrl.searchParams.append('ti', uetTagId);
         uetConsentUrl.searchParams.append('Ver', '2');
@@ -2597,32 +2597,20 @@ function updateConsentMode(consentData) {
         uetConsentUrl.searchParams.append('cdb', 'AQAQ');
         uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
         
-        // Only include tm parameter if the UET tag is loaded through GTM
+       // Only include tm parameter if the UET tag is loaded through GTM
         if (window.google_tag_manager) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
         
         // Send the single consent update request
         sendUetConsentRequest(uetConsentUrl.toString());
-        
-        // Push UET consent update to dataLayer (for tracking purposes, but doesn't send additional requests)
-        window.dataLayer.push({
-            'event': 'uet_consent_update',
-            'uet_consent': {
-                'ad_storage': uetConsentState,
-                'status': consentData.status,
-                'src': 'update',
-                'asc': uetConsentState === 'granted' ? 'G' : 'D',
-                'timestamp': new Date().toISOString()
-            }
-        });
     }
     
-    // Push Google consent update to dataLayer
+    // Push Google consent update to dataLayer (for tracking only - no additional requests)
     window.dataLayer.push({
         'event': 'cookie_consent_update',
         'consent_mode': consentStates,
-        'gcs': gcsSignal,
+        'gcs': gcsSignal, // Now includes the GCS signal
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
