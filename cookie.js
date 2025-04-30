@@ -2549,6 +2549,7 @@ function loadCookiesAccordingToConsent(consentData) {
 
 // Update consent mode for both Google and Microsoft UET
 // Update consent mode for both Google and Microsoft UET
+// Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
@@ -2609,15 +2610,17 @@ function updateConsentMode(consentData) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
 
-        // Ensure no other UET-related events are pushed to dataLayer that might trigger unwanted requests
+        // Override dataLayer.push to block unwanted UET-related events
         const originalDataLayerPush = window.dataLayer.push;
         window.dataLayer.push = function (...args) {
             const event = args[0];
-            // Block any UET-related events that might interfere (like gtmConsent)
+            // Allow the intended UET consent update event
             if (event && typeof event === 'object' && event.event === 'uet_consent_update') {
                 return originalDataLayerPush.apply(window.dataLayer, args);
             }
-            if (event && typeof event === 'object' && (event.event === 'gtmConsent' || event.event === 'uet_gtm_consent')) {
+            // Block any GTM consent events that might interfere
+            if (event && typeof event === 'object' && 
+                (event.event === 'gtmConsent' || event.event === 'uet_gtm_consent' || event.event.includes('gtmConsent'))) {
                 console.warn('Blocked unwanted UET GTM consent event:', event);
                 return; // Prevent unwanted GTM consent events
             }
@@ -2647,11 +2650,11 @@ function updateConsentMode(consentData) {
                 window.dataLayer.push = originalDataLayerPush;
             } else {
                 // If pageLoad hasn't fired yet, retry after a short delay
-                setTimeout(checkPageLoad, 100);
+                setTimeout(checkPageLoad, 50);
             }
         };
 
-        // Delay the check to ensure the pageLoad event has a chance to fire
+        // Start checking for pageLoad event
         setTimeout(checkPageLoad, 50);
     }
 }
