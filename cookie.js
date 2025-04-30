@@ -2548,7 +2548,7 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-// Update consent mode for both Google and Microsoft UET
+// Update the updateConsentMode function to consolidate UET requests
 function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
@@ -2573,20 +2573,41 @@ function updateConsentMode(consentData) {
         } else if (consentData.categories.analytics && consentData.categories.advertising) {
             gcsSignal = 'G111'; // Both granted (same as accept all)
         } else {
-            gcsSignal = 'G100'; // Both denied (same as reject all)
+            gcsSignal = ''; // Both denied (same as reject all)
         }
     }
 
     // Update Google consent
     gtag('consent', 'update', consentStates);
     
-    // Update Microsoft UET consent if enabled - SINGLE URL VERSION
+    // Update Microsoft UET consent if enabled - MODIFIED TO SEND ONLY ONE REQUEST
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
-        const uetTagId = detectUetTagId();
-        const mid = generateUniqueId();
         
-        // Build the single UET consent URL with all required parameters
+        // Push UET consent update to dataLayer
+        const uetConsentEvent = {
+            'event': 'uet_consent_update',
+            'uet_consent': {
+                'ad_storage': uetConsentState,
+                'status': consentData.status,
+                'src': 'update',
+                'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                'timestamp': new Date().toISOString()
+            }
+        };
+        
+        window.dataLayer.push(uetConsentEvent);
+        
+        // Update UET queue
+        window.uetq.push('consent', 'update', {
+            'ad_storage': uetConsentState
+        });
+        
+        // Build UET consent URL with all required parameters
+        const uetTagId = detectUetTagId();
+        const mid = generateUniqueId(); // Generate a new MID for each consent update
+        
+        // Create the UET consent URL with all required parameters
         const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
         uetConsentUrl.searchParams.append('ti', uetTagId);
         uetConsentUrl.searchParams.append('Ver', '2');
@@ -2597,20 +2618,20 @@ function updateConsentMode(consentData) {
         uetConsentUrl.searchParams.append('cdb', 'AQAQ');
         uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
         
-       // Only include tm parameter if the UET tag is loaded through GTM
+        // Only include tm parameter if the UET tag is loaded through GTM
         if (window.google_tag_manager) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
         
-        // Send the single consent update request
+        // Send the consent update - ONLY ONE REQUEST
         sendUetConsentRequest(uetConsentUrl.toString());
     }
     
-    // Push Google consent update to dataLayer (for tracking only - no additional requests)
+    // Push Google consent update to dataLayer
     window.dataLayer.push({
         'event': 'cookie_consent_update',
         'consent_mode': consentStates,
-        'gcs': gcsSignal, // Now includes the GCS signal
+        'gcs': gcsSignal,
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
@@ -2818,3 +2839,4 @@ function handleScrollAcceptance() {
         }
     }
 }
+
