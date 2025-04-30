@@ -2550,7 +2550,6 @@ function loadCookiesAccordingToConsent(consentData) {
 // Update consent mode for both Google and Microsoft UET
 
 
-
 // Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
@@ -2624,7 +2623,19 @@ function updateConsentMode(consentData) {
             uetConsentUrl.searchParams.append('tm', 'gtm002');
         }
 
-    
+        // Override sendUetConsentRequest to block or delay evt=gtmConsent
+        const originalSendUetConsentRequest = sendUetConsentRequest;
+        const delayedRequests = []; // Store requests to delay
+
+        sendUetConsentRequest = function (url) {
+            if (url.includes('evt=Consent')) {
+                console.warn('Delaying evt=Consent request:', url);
+                delayedRequests.push(url); // Delay this request
+                return;
+            }
+            originalSendUetConsentRequest(url);
+        };
+
         // Send the default consent request (should be 2nd)
         originalSendUetConsentRequest(uetDefaultConsentUrl.toString());
 
@@ -2685,8 +2696,6 @@ function sendUetConsentRequest(url) {
         };
     }
 }
-
-
 
 
 
