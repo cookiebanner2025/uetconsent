@@ -2614,6 +2614,8 @@ function loadCookiesAccordingToConsent(consentData) {
 
 // Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
+// Update consent mode for both Google and Microsoft UET
+function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
         'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
@@ -2651,13 +2653,16 @@ function updateConsentMode(consentData) {
             'ad_storage': uetConsentState
         });
         
-        // Push UET consent event to dataLayer
+        // Push UET consent event to dataLayer with the exact requested format
         window.dataLayer.push({
             'event': 'uet_consent_update',
-            'consent_mode': {
-                'ad_storage': uetConsentState
-            },
-            'timestamp': new Date().toISOString()
+            'uet_consent': {
+                'ad_storage': uetConsentState,
+                'status': consentData.status,
+                'src': 'update',
+                'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                'timestamp': new Date().toISOString()
+            }
         });
     }
     
