@@ -2613,7 +2613,6 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
-function updateConsentMode(consentData) {
 // Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
