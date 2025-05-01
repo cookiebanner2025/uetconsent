@@ -313,15 +313,6 @@ function setDefaultUetConsent() {
     window.uetq.push('consent', 'default', {
         'ad_storage': consentState
     });
-    
-    // Push to dataLayer
-    window.dataLayer.push({
-        'event': 'uet_consent_default',
-        'consent_mode': {
-            'ad_storage': consentState
-        },
-        'timestamp': new Date().toISOString()
-    });
 }
 
 // Enhanced cookie database with detailed descriptions
@@ -2446,24 +2437,6 @@ function acceptAllCookies() {
     if (config.analytics.enabled) {
         updateConsentStats('accepted');
     }
-    
-    // Push dataLayer event for consent acceptance
-    window.dataLayer.push({
-        'event': 'cookie_consent_accepted',
-        'consent_mode': {
-            'ad_storage': 'granted',
-            'analytics_storage': 'granted',
-            'ad_user_data': 'granted',
-            'ad_personalization': 'granted',
-            'personalization_storage': 'granted',
-            'functionality_storage': 'granted',
-            'security_storage': 'granted'
-        },
-        'gcs': 'G111',
-        'consent_status': 'accepted',
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
 }
 
 function rejectAllCookies() {
@@ -2487,24 +2460,6 @@ function rejectAllCookies() {
     if (config.analytics.enabled) {
         updateConsentStats('rejected');
     }
-    
-    // Push dataLayer event for consent rejection
-    window.dataLayer.push({
-        'event': 'cookie_consent_rejected',
-        'consent_mode': {
-            'ad_storage': 'denied',
-            'analytics_storage': 'denied',
-            'ad_user_data': 'denied',
-            'ad_personalization': 'denied',
-            'personalization_storage': 'denied',
-            'functionality_storage': 'denied',
-            'security_storage': 'granted'
-        },
-        'gcs': 'G100',
-        'consent_status': 'rejected',
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
 }
 
 function saveCustomSettings() {
@@ -2548,26 +2503,6 @@ function saveCustomSettings() {
     if (config.analytics.enabled) {
         updateConsentStats('custom');
     }
-    
-    // Push dataLayer event for custom consent settings
-    const consentStates = {
-        'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
-        'analytics_storage': consentData.categories.analytics ? 'granted' : 'denied',
-        'ad_user_data': consentData.categories.advertising ? 'granted' : 'denied',
-        'ad_personalization': consentData.categories.advertising ? 'granted' : 'denied',
-        'personalization_storage': consentData.categories.performance ? 'granted' : 'denied',
-        'functionality_storage': consentData.categories.functional ? 'granted' : 'denied',
-        'security_storage': 'granted'
-    };
-    
-    window.dataLayer.push({
-        'event': 'cookie_consent_custom',
-        'consent_mode': consentStates,
-        'gcs': gcsSignal,
-        'consent_status': 'custom',
-        'consent_categories': consentData.categories,
-        'timestamp': new Date().toISOString()
-    });
 }
 
 // Helper functions
@@ -2613,6 +2548,7 @@ function loadCookiesAccordingToConsent(consentData) {
 }
 
 // Update consent mode for both Google and Microsoft UET
+// Update consent mode for both Google and Microsoft UET
 function updateConsentMode(consentData) {
     const consentStates = {
         'ad_storage': consentData.categories.advertising ? 'granted' : 'denied',
@@ -2647,21 +2583,42 @@ function updateConsentMode(consentData) {
     // Update Microsoft UET consent if enabled
     if (config.uetConfig.enabled) {
         const uetConsentState = consentData.categories.advertising ? 'granted' : 'denied';
-        window.uetq.push('consent', 'update', {
-            'ad_storage': uetConsentState
-        });
+        const uetTagId = detectUetTagId();
+        const mid = generateUniqueId();
         
-        // Push UET consent event to dataLayer
+        // Build the single UET consent URL
+        const uetConsentUrl = new URL(`https://bat.bing.com/actionp/0`);
+        uetConsentUrl.searchParams.append('ti', uetTagId);
+        uetConsentUrl.searchParams.append('Ver', '2');
+        uetConsentUrl.searchParams.append('mid', mid);
+        uetConsentUrl.searchParams.append('bo', '3'); // bo=3 for consent update
+        uetConsentUrl.searchParams.append('evt', 'consent');
+        uetConsentUrl.searchParams.append('src', 'update');
+        uetConsentUrl.searchParams.append('cdb', 'AQAQ');
+        uetConsentUrl.searchParams.append('asc', uetConsentState === 'granted' ? 'G' : 'D');
+        
+        // Only include tm parameter if the UET tag is loaded through GTM
+        if (window.google_tag_manager) {
+            uetConsentUrl.searchParams.append('tm', 'gtm002');
+        }
+        
+        // Send the single consent update request
+        sendUetConsentRequest(uetConsentUrl.toString());
+        
+        // Push UET consent update to dataLayer (for tracking purposes, but doesn't send additional requests)
         window.dataLayer.push({
             'event': 'uet_consent_update',
-            'consent_mode': {
-                'ad_storage': uetConsentState
-            },
-            'timestamp': new Date().toISOString()
+            'uet_consent': {
+                'ad_storage': uetConsentState,
+                'status': consentData.status,
+                'src': 'update',
+                'asc': uetConsentState === 'granted' ? 'G' : 'D',
+                'timestamp': new Date().toISOString()
+            }
         });
     }
     
-    // Push general consent update to dataLayer
+    // Push Google consent update to dataLayer
     window.dataLayer.push({
         'event': 'cookie_consent_update',
         'consent_mode': consentStates,
@@ -2669,6 +2626,21 @@ function updateConsentMode(consentData) {
         'consent_status': consentData.status,
         'consent_categories': consentData.categories,
         'timestamp': new Date().toISOString()
+    });
+}
+
+// Send UET consent request
+function sendUetConsentRequest(url) {
+    const img = new Image();
+    img.src = url;
+}
+
+// Generate a unique MID (Microsoft ID)
+function generateUniqueId() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
     });
 }
 
@@ -2858,3 +2830,5 @@ function handleScrollAcceptance() {
         }
     }
 }
+
+
