@@ -288,6 +288,8 @@ const config = {
 // ============== IMPLEMENTATION SECTION ============== //
 // Initialize dataLayer for Google Tag Manager
 window.dataLayer = window.dataLayer || [];
+// Initialize UET queue if not already exists (Microsoft Consent Mode)
+if (typeof window.uetq === 'undefined') window.uetq = [];  // <-- ADD THIS LINE
 function gtag() { dataLayer.push(arguments); }
 
 // Initialize UET queue if not already exists
@@ -307,7 +309,8 @@ gtag('consent', 'default', {
 // Set default UET consent
 function setDefaultUetConsent() {
     if (!config.uetConfig.enabled) return;
-    
+     // Redundant safeguard
+  if (typeof window.uetq === 'undefined') window.uetq = [];  // <-- ADD THIS LINE
     const consentState = config.uetConfig.defaultConsent === 'granted' ? 'granted' : 'denied';
     
     window.uetq.push('consent', 'default', {
