@@ -1763,7 +1763,7 @@ function injectConsentHTML(detectedCookies, language = 'en') {
         <div class="cookie-category">
             <div class="toggle-container">
                 <h3>${lang[categoryKey]}</h3>
-                <label class="toggle-switch">
+                <label class="toggle-switch" data-ms-consent="ad_storage">
                     <input type="checkbox" data-category="${category}" ${isEssential ? 'checked disabled' : ''}>
                     <span class="toggle-slider"></span>
                 </label>
@@ -3517,7 +3517,15 @@ function detectUetTagId() {
         return config.uetConfig.defaultTagId;
     }
 
-    // Look for UET tag in scripts
+    // 1. Check for hardcoded UET tags in DOM
+    const uetTags = document.querySelectorAll('script[src*="bat.bing.com"], script[src*="bat.bing.net"]');
+    if (uetTags.length > 0) {
+        const tagSrc = uetTags[0].src;
+        const tiMatch = tagSrc.match(/[\?&]ti=(\d+)/);
+        if (tiMatch) return tiMatch[1];
+    }
+
+    // 2. Look for UET tag in scripts
     const scripts = document.getElementsByTagName('script');
     for (let i = 0; i < scripts.length; i++) {
         const script = scripts[i];
@@ -3529,7 +3537,7 @@ function detectUetTagId() {
         }
     }
 
-    // Look for UET tag in dataLayer
+    // 3. Look for UET tag in dataLayer
     if (window.dataLayer) {
         for (let i = 0; i < window.dataLayer.length; i++) {
             const item = window.dataLayer[i];
