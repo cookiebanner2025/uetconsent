@@ -325,21 +325,90 @@ function setDefaultUetConsent() {
 }
 
 // Enhanced cookie database with detailed descriptions
+// Enhanced cookie database with detailed descriptions
 const cookieDatabase = {
-    // Microsoft UET cookies
+    // Existing cookies
+    '_gcl': { category: 'advertising', duration: '90 days', description: 'Google Click Identifier - Tracks ad clicks and conversions' },
+    '_gcl_au': { category: 'advertising', duration: '90 days', description: 'Google Ads conversion tracking' },
+    'gclid': { category: 'advertising', duration: '30 days', description: 'Google Click ID - Tracks PPC ad clicks' },
+    'IDE': { category: 'advertising', duration: '390 days', description: 'Google DoubleClick - Used for retargeting' },
+    'NID': { category: 'advertising', duration: '180 days', description: 'Google Ads preferences' },
+    '_gat_gtag': { category: 'advertising', duration: '1 minute', description: 'Google Tag Manager throttle' },
+    'msclkid': { category: 'advertising', duration: '30 days', description: 'Microsoft Click ID - Tracks ad clicks' },
+    '_uetmsdns': { category: 'advertising', duration: 'Session', description: 'Microsoft UET consent mode cookie' },
+    'MUID': { category: 'advertising', duration: '390 days', description: 'Microsoft Universal ID' },
     '_uetsid': { category: 'advertising', duration: '1 day', description: 'Bing Ads session ID' },
     '_uetvid': { category: 'advertising', duration: '390 days', description: 'Bing Ads visitor ID' },
-    '_uetmsdns': { category: 'advertising', duration: 'Session', description: 'Microsoft UET consent mode cookie' },
-    
-    // Google Analytics cookies
+    '_fbp': { category: 'advertising', duration: '90 days', description: 'Facebook Pixel - Conversion tracking' },
+    'fr': { category: 'advertising', duration: '90 days', description: 'Facebook browser ID' },
+    'datr': { category: 'advertising', duration: '730 days', description: 'Facebook browser identification' },
+    '_ttp': { category: 'advertising', duration: '390 days', description: 'TikTok Pixel tracking' },
+    'ttclid': { category: 'advertising', duration: '30 days', description: 'TikTok Click ID' },
+    'tt_sessionid': { category: 'advertising', duration: '1 day', description: 'TikTok session' },
+    'lidc': { category: 'advertising', duration: '1 day', description: 'LinkedIn Ads routing' },
+    'bcookie': { category: 'advertising', duration: '730 days', description: 'LinkedIn Browser ID' },
+    'li_sugr': { category: 'advertising', duration: '90 days', description: 'LinkedIn user tracking' },
+    '_pinterest_ct_ua': { category: 'advertising', duration: '365 days', description: 'Pinterest Click Tracking' },
+    '_pinterest_sess': { category: 'advertising', duration: '1 day', description: 'Pinterest session' },
+    'cm_sub': { category: 'advertising', duration: '365 days', description: 'Pinterest conversion' },
+    'obuid': { category: 'advertising', duration: '365 days', description: 'Outbrain user ID' },
+    'obcl': { category: 'advertising', duration: '30 days', description: 'Outbrain click tracking' },
+    'personalization_id': { category: 'advertising', duration: '730 days', description: 'Twitter personalization' },
+    'guest_id': { category: 'advertising', duration: '730 days', description: 'Twitter guest tracking' },
+    'sc_at': { category: 'advertising', duration: '365 days', description: 'Snapchat Ads tracking' },
+    '_scid': { category: 'advertising', duration: '365 days', description: 'Snapchat user ID' },
+    'rdt_uuid': { category: 'advertising', duration: '365 days', description: 'Reddit unique user ID' },
+    'session_tracker': { category: 'advertising', duration: '1 day', description: 'Reddit session' },
+    'criteo': { category: 'advertising', duration: '365 days', description: 'Criteo retargeting' },
+    'uid': { category: 'advertising', duration: '365 days', description: 'Criteo user ID' },
+    '__adroll': { category: 'advertising', duration: '365 days', description: 'AdRoll tracking' },
+    '__ar_v4': { category: 'advertising', duration: '365 days', description: 'AdRoll segmentation' },
+    'ad-id': { category: 'advertising', duration: '270 days', description: 'Amazon Ad System ID' },
+    'ad-privacy': { category: 'advertising', duration: '730 days', description: 'Amazon Ad Preferences' },
+    'yandexuid': { category: 'advertising', duration: '365 days', description: 'Yandex Metrica user ID' },
+    'ymex': { category: 'advertising', duration: '365 days', description: 'Yandex Metrica visitor' },
+    'm-b': { category: 'advertising', duration: '365 days', description: 'Quora browser ID' },
+    'm-uid': { category: 'advertising', duration: '365 days', description: 'Quora user ID' },
+    'sadb': { category: 'advertising', duration: '30 days', description: 'StackAdapt bidding data' },
+    'sadr': { category: 'advertising', duration: '30 days', description: 'StackAdapt retargeting' },
+    'TDID': { category: 'advertising', duration: '365 days', description: 'The Trade Desk ID' },
+    'TDCPM': { category: 'advertising', duration: '365 days', description: 'The Trade Desk CPM data' },
+    'mmapi': { category: 'advertising', duration: '30 days', description: 'MediaMath API tracking' },
+    'mmdata': { category: 'advertising', duration: '30 days', description: 'MediaMath campaign data' },
     '_ga': { category: 'analytics', duration: '730 days', description: 'Google Analytics' },
     '_gid': { category: 'analytics', duration: '1 day', description: 'Google Analytics' },
     '_gat': { category: 'analytics', duration: '1 minute', description: 'Google Analytics throttle' },
-    
-    // Essential cookies
     'PHPSESSID': { category: 'functional', duration: 'Session', description: 'PHP session' },
-    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' }
+    'cookie_consent': { category: 'functional', duration: '365 days', description: 'Consent preferences' },
+
+    // New Facebook cookies from your list
+    'lu': { category: 'advertising', duration: '2 years', description: 'Used to record whether the person chose to remain logged in (User ID and miscellaneous log in information)' },
+    'xs': { category: 'advertising', duration: '90 days', description: 'Used with c_user cookie to authenticate identity to Facebook (Session ID, creation time, authentication value)' },
+    'c_user': { category: 'advertising', duration: '90 days', description: 'Used with xs cookie to authenticate identity to Facebook (User ID)' },
+    'm_user': { category: 'advertising', duration: '90 days', description: 'Used to authenticate identity on Facebook mobile website (Email, User ID, authentication value)' },
+    'pl': { category: 'advertising', duration: '90 days', description: 'Records that a device or browser logged in via Facebook platform' },
+    'dbln': { category: 'advertising', duration: '2 years', description: 'Used to enable device-based logins (Login authentication values)' },
+    'aks': { category: 'advertising', duration: '30 days', description: 'Determines login state of a person visiting accountkit.com (Account kit access token)' },
+    'aksb': { category: 'advertising', duration: '30 minutes', description: 'Authenticates logins using Account Kit (Request time value)' },
+    'sfau': { category: 'advertising', duration: '1 day', description: 'Optimizes recovery flow after failed login attempts (Encrypted user ID, contact point, time stamp)' },
+    'ick': { category: 'advertising', duration: '2 years', description: 'Stores an encryption key used to encrypt cookies' },
+    'csm': { category: 'advertising', duration: '90 days', description: 'Insecure indicator' },
+    's': { category: 'advertising', duration: '90 days', description: 'Facebook browser identification, authentication, marketing cookies' },
+    'sb': { category: 'advertising', duration: '2 years', description: 'Facebook browser identification, authentication, marketing cookies' },
+    '_fbc': { category: 'advertising', duration: '2 years', description: 'Used for Facebook advertising products like real time bidding' },
+    'oo': { category: 'advertising', duration: '5 years', description: 'Ad opt-out cookie' },
+    'ddid': { category: 'advertising', duration: '28 days', description: 'Used to open specific location in advertiser app upon installation' },
+    'locale': { category: 'advertising', duration: '7 days', description: 'Contains display locale of last logged in user' },
+    'js_ver': { category: 'advertising', duration: '7 days', description: 'Records age of Facebook javascript files' },
+    'rc': { category: 'advertising', duration: '7 days', description: 'Used to optimize site performance for advertisers' },
+    'campaign_click_url': { category: 'advertising', duration: '30 days', description: 'Records Facebook URL landed on after clicking an ad' },
+    'usida': { category: 'advertising', duration: 'Session', description: 'Collects browser and unique identifier for targeted advertising' },
+    
+    // Facebook functional cookies
+    'wd': { category: 'functional', duration: 'Session', description: 'Stores browser window dimensions for page rendering optimization' },
+    'presence': { category: 'functional', duration: 'Session', description: 'Contains user chat state' }
 };
+
 
 // Language translations (keeping only en and fr as requested)
 const translations = {
